@@ -1,78 +1,178 @@
-import { useState, useEffect } from 'react';
-import { ChessBoard } from '@/app/components/ChessBoard';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { TransparentOverlay } from '@/app/components/TransparentOverlay';
 
+export interface AnalysisState {
+  isRunning: boolean;
+  evaluation: number;
+  bestMove: string;
+  depth: number;
+  winRate: number;
+  isAutoMove: boolean;
+  delay: number;
+  moves: MoveRecord[];
+  winHistory: WinHistoryPoint[];
+  elapsedTime: number;
+}
+
+export interface MoveRecord {
+  number: number;
+  white: string;
+  black: string;
+  evaluation: number;
+}
+
+export interface WinHistoryPoint {
+  move: number;
+  white: number;
+  black: number;
+}
+
+const INITIAL_MOVES: MoveRecord[] = [
+  { number: 1, white: 'e4', black: 'c5', evaluation: 0.3 },
+  { number: 2, white: 'Nf3', black: 'Nc6', evaluation: 0.4 },
+  { number: 3, white: 'd4', black: 'cxd4', evaluation: 0.2 },
+  { number: 4, white: 'Nxd4', black: 'Nf6', evaluation: 0.5 },
+];
+
+const INITIAL_WIN_HISTORY: WinHistoryPoint[] = [
+  { move: 1, white: 52, black: 48 },
+  { move: 2, white: 51, black: 49 },
+  { move: 3, white: 53, black: 47 },
+  { move: 4, white: 55, black: 45 },
+  { move: 5, white: 58, black: 42 },
+  { move: 6, white: 56, black: 44 },
+  { move: 7, white: 59, black: 41 },
+  { move: 8, white: 62, black: 38 },
+];
+
 export default function App() {
-  const [isRunning, setIsRunning] = useState(true);
-  const [evaluation, setEvaluation] = useState(1.2);
-  const [bestMove, setBestMove] = useState('Nf3');
-  const [depth, setDepth] = useState(18);
-  const [winRate, setWinRate] = useState(62);
+  const [isVisible, setIsVisible] = useState(true);
+  const [state, setState] = useState<AnalysisState>({
+    isRunning: true,
+    evaluation: 1.2,
+    bestMove: 'Nf3',
+    depth: 18,
+    winRate: 62,
+    isAutoMove: false,
+    delay: 500,
+    moves: INITIAL_MOVES,
+    winHistory: INITIAL_WIN_HISTORY,
+    elapsedTime: 0,
+  });
 
   // Simulate live engine updates
   useEffect(() => {
-    if (!isRunning) return;
+    if (!state.isRunning) return;
 
     const interval = setInterval(() => {
-      setEvaluation(prev => prev + (Math.random() - 0.5) * 0.3);
-      setDepth(prev => Math.min(25, prev + (Math.random() > 0.7 ? 1 : 0)));
-      setWinRate(prev => Math.min(99, Math.max(1, prev + (Math.random() - 0.5) * 2)));
-      
-      if (Math.random() > 0.9) {
-        const moves = ['Nf3', 'e4', 'Qd4', 'Bc4', 'O-O', 'Rd1', 'Ng5', 'h4'];
-        setBestMove(moves[Math.floor(Math.random() * moves.length)]);
-      }
+      setState(prev => {
+        const newEval = prev.evaluation + (Math.random() - 0.5) * 0.3;
+        const newDepth = Math.min(30, prev.depth + (Math.random() > 0.7 ? 1 : 0));
+        const newWinRate = Math.min(99, Math.max(1, prev.winRate + (Math.random() - 0.5) * 2));
+
+        const possibleMoves = ['Nf3', 'e4', 'Qd4', 'Bc4', 'O-O', 'Rd1', 'Ng5', 'h4', 'Bb5', 'd5'];
+        const newBestMove = Math.random() > 0.9
+          ? possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+          : prev.bestMove;
+
+        return {
+          ...prev,
+          evaluation: newEval,
+          depth: newDepth,
+          winRate: newWinRate,
+          bestMove: newBestMove,
+          elapsedTime: prev.elapsedTime + 2,
+        };
+      });
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [state.isRunning]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Shift+X - toggle visibility
+      if (e.ctrlKey && e.shiftKey && e.key === 'X') {
+        e.preventDefault();
+        setIsVisible(prev => !prev);
+      }
+      // Ctrl+Shift+S - toggle analysis
+      if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        setState(prev => ({ ...prev, isRunning: !prev.isRunning }));
+      }
+      // Ctrl+Shift+A - toggle auto-move
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        setState(prev => ({ ...prev, isAutoMove: !prev.isAutoMove }));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const toggleRun = useCallback(() => {
+    setState(prev => ({ ...prev, isRunning: !prev.isRunning }));
+  }, []);
+
+  const toggleAutoMove = useCallback(() => {
+    setState(prev => ({ ...prev, isAutoMove: !prev.isAutoMove }));
+  }, []);
+
+  const setDelay = useCallback((delay: number) => {
+    setState(prev => ({ ...prev, delay }));
+  }, []);
+
+  const toggleVisibility = useCallback(() => {
+    setIsVisible(prev => !prev);
+  }, []);
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8"
-      style={{
-        aspectRatio: '12 / 9',
-        maxHeight: '100vh',
-      }}
-    >
-      {/* Background texture */}
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Main Container with 12:9 aspect ratio */}
-      <div 
-        className="relative w-full max-w-7xl mx-auto"
-        style={{
-          aspectRatio: '12 / 9',
-        }}
-      >
-        <div className="flex gap-6 h-full">
-          {/* Chess Board - Left Side */}
-          <div className="flex-shrink-0 flex items-center justify-center">
-            <ChessBoard />
-          </div>
-
-          {/* Transparent Overlay - Right Side */}
-          <div className="flex-1 min-w-0">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-stretch justify-end">
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 60 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="w-[420px] min-h-screen flex-shrink-0"
+          >
             <TransparentOverlay
-              bestMove={bestMove}
-              evaluation={evaluation}
-              depth={depth}
-              winRate={winRate}
-              isRunning={isRunning}
-              onToggleRun={() => setIsRunning(!isRunning)}
+              state={state}
+              onToggleRun={toggleRun}
+              onToggleAutoMove={toggleAutoMove}
+              onDelayChange={setDelay}
+              onToggleVisibility={toggleVisibility}
             />
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Ambient light effects */}
-      <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Hidden toggle button when panel is hidden */}
+      <AnimatePresence>
+        {!isVisible && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={toggleVisibility}
+            className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-400/30 backdrop-blur-xl flex items-center justify-center hover:bg-cyan-500/30 transition-colors"
+            title="Show panel (Ctrl+Shift+X)"
+          >
+            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Minimal ambient glow */}
+      <div className="fixed top-0 right-0 w-[500px] h-full pointer-events-none opacity-30">
+        <div className="absolute top-1/4 right-10 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/3 right-20 w-48 h-48 bg-purple-500/10 rounded-full blur-[80px]" />
+      </div>
     </div>
   );
 }

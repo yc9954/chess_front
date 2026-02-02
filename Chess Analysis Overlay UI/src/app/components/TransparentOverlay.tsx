@@ -1,144 +1,306 @@
-import { motion } from 'motion/react';
-import { Sparkles, TrendingUp, TrendingDown, Minus, Play, Pause, Eye, Settings, Clock, Target } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Play,
+  Pause,
+  EyeOff,
+  Target,
+  Clock,
+  ChevronDown,
+  Keyboard,
+  Crown,
+} from 'lucide-react';
+import type { AnalysisState } from '@/app/App';
+import { MovesList } from './MovesList';
+import { WinProbabilityGraph } from './WinProbabilityGraph';
+import { ControlPanel } from './ControlPanel';
 
 interface TransparentOverlayProps {
-  bestMove: string;
-  evaluation: number;
-  depth: number;
-  winRate: number;
-  isRunning: boolean;
+  state: AnalysisState;
   onToggleRun: () => void;
+  onToggleAutoMove: () => void;
+  onDelayChange: (delay: number) => void;
+  onToggleVisibility: () => void;
 }
 
 export function TransparentOverlay({
-  bestMove,
-  evaluation,
-  depth,
-  winRate,
-  isRunning,
+  state,
   onToggleRun,
+  onToggleAutoMove,
+  onDelayChange,
+  onToggleVisibility,
 }: TransparentOverlayProps) {
-  const getEvalIcon = () => {
-    if (evaluation > 2) return <TrendingUp className="w-4 h-4 text-green-400" />;
-    if (evaluation < -2) return <TrendingDown className="w-4 h-4 text-red-400" />;
-    return <Minus className="w-4 h-4 text-gray-400" />;
+  const [expandedSections, setExpandedSections] = useState({
+    moves: true,
+    graph: false,
+    shortcuts: false,
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const evalPercentage = Math.min(100, Math.max(0, ((evaluation + 10) / 20) * 100));
+  const getEvalIcon = () => {
+    if (state.evaluation > 2) return <TrendingUp className="w-4 h-4 text-emerald-400" />;
+    if (state.evaluation < -2) return <TrendingDown className="w-4 h-4 text-red-400" />;
+    return <Minus className="w-4 h-4 text-white/40" />;
+  };
+
+  const evalPercentage = Math.min(100, Math.max(0, ((state.evaluation + 10) / 20) * 100));
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="h-full backdrop-blur-2xl bg-black/25 border border-white/15 rounded-3xl shadow-2xl overflow-hidden"
-      style={{
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-      }}
-    >
-      <div className="h-full flex flex-col p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-lg font-semibold text-white/90">Chess AI</h2>
+    <div className="h-full flex flex-col bg-[#0d0d14]/95 backdrop-blur-2xl border-l border-white/[0.06]">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Crown className="w-4 h-4 text-white" />
           </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`} />
-            <span className="text-xs text-white/70">{isRunning ? 'Active' : 'Paused'}</span>
+          <div>
+            <h1 className="text-sm font-semibold text-white/90 tracking-tight">Chess AI</h1>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${state.isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-white/20'}`} />
+              <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                {state.isRunning ? 'Analyzing' : 'Paused'}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Best Move - Large Display */}
-        <div className="mb-6 p-5 bg-white/5 rounded-2xl border border-white/10">
-          <div className="text-xs text-white/50 mb-2 uppercase tracking-wide">Best Move</div>
-          <div className="text-5xl font-mono text-cyan-400 font-bold tracking-tight mb-2">
-            {bestMove}
-          </div>
-          <div className="flex items-center gap-2 text-white/70">
-            {getEvalIcon()}
-            <span className="text-lg font-mono">
-              {evaluation > 0 ? '+' : ''}{evaluation.toFixed(1)}
-            </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onToggleRun}
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            title={state.isRunning ? 'Pause (Ctrl+Shift+S)' : 'Start (Ctrl+Shift+S)'}
+          >
+            {state.isRunning ? (
+              <Pause className="w-4 h-4 text-white/50" />
+            ) : (
+              <Play className="w-4 h-4 text-white/50" />
+            )}
+          </button>
+          <button
+            onClick={onToggleVisibility}
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            title="Hide (Ctrl+Shift+X)"
+          >
+            <EyeOff className="w-4 h-4 text-white/50" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Scrollable Content ── */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Best Move */}
+        <div className="px-5 py-5">
+          <div className="text-[10px] text-white/30 uppercase tracking-widest mb-3">Best Move</div>
+          <div className="flex items-end justify-between">
+            <motion.div
+              key={state.bestMove}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-4xl font-mono font-bold text-cyan-400 tracking-tight"
+              style={{
+                textShadow: '0 0 30px rgba(6, 182, 212, 0.3)',
+              }}
+            >
+              {state.bestMove}
+            </motion.div>
+            <div className="flex items-center gap-2 pb-1">
+              {getEvalIcon()}
+              <span className="text-lg font-mono text-white/80">
+                {state.evaluation > 0 ? '+' : ''}{state.evaluation.toFixed(1)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Evaluation Bar */}
-        <div className="mb-6">
-          <div className="text-xs text-white/50 mb-3 uppercase tracking-wide">Position Evaluation</div>
-          <div className="relative h-3 bg-gradient-to-r from-red-500/40 via-gray-700/40 to-green-500/40 rounded-full overflow-hidden">
+        <div className="px-5 pb-4">
+          <div className="relative h-2 rounded-full overflow-hidden bg-white/[0.04]">
+            <div
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-500/60 via-white/20 to-emerald-500/60 rounded-full"
+              style={{ width: '100%' }}
+            />
             <motion.div
-              className="absolute top-0 bottom-0 w-1 bg-white shadow-lg shadow-white/50"
-              animate={{ left: `${evalPercentage}%` }}
-              transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-2 border-cyan-400"
+              animate={{ left: `calc(${evalPercentage}% - 6px)` }}
+              transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+              style={{
+                boxShadow: '0 0 8px rgba(6, 182, 212, 0.6)',
+              }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-xs text-white/40">
-            <span>Black advantage</span>
-            <span>White advantage</span>
+          <div className="flex justify-between mt-1.5">
+            <span className="text-[9px] text-white/20">Black</span>
+            <span className="text-[9px] text-white/20">White</span>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-            <div className="flex items-center gap-2 text-white/50 mb-1">
-              <Target className="w-3 h-3" />
-              <span className="text-xs uppercase tracking-wide">Depth</span>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-0 border-y border-white/[0.06]">
+          <div className="px-4 py-3 border-r border-white/[0.06]">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Target className="w-3 h-3 text-cyan-400/60" />
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Depth</span>
             </div>
-            <div className="text-2xl font-bold text-white/90">{depth}</div>
+            <div className="text-lg font-mono font-semibold text-white/80">{state.depth}</div>
           </div>
-          
-          <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-            <div className="flex items-center gap-2 text-white/50 mb-1">
-              <TrendingUp className="w-3 h-3" />
-              <span className="text-xs uppercase tracking-wide">Win Rate</span>
+          <div className="px-4 py-3 border-r border-white/[0.06]">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingUp className="w-3 h-3 text-emerald-400/60" />
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Win</span>
             </div>
-            <div className="text-2xl font-bold text-white/90">{winRate}%</div>
+            <div className="text-lg font-mono font-semibold text-white/80">{Math.round(state.winRate)}%</div>
+          </div>
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Clock className="w-3 h-3 text-orange-400/60" />
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Time</span>
+            </div>
+            <div className="text-lg font-mono font-semibold text-white/80">{formatTime(state.elapsedTime)}</div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="mt-auto space-y-2">
-          <motion.button
-            whileHover={{ backgroundColor: 'rgba(6, 182, 212, 0.2)' }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onToggleRun}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500/20 border border-cyan-400/30 rounded-xl text-white/90 font-medium transition-colors"
+        {/* Controls */}
+        <div className="px-5 py-4 border-b border-white/[0.06]">
+          <ControlPanel
+            isAutoMoveEnabled={state.isAutoMove}
+            onToggleAutoMove={onToggleAutoMove}
+            delay={state.delay}
+            onDelayChange={onDelayChange}
+          />
+        </div>
+
+        {/* Move History - Collapsible */}
+        <div className="border-b border-white/[0.06]">
+          <button
+            onClick={() => toggleSection('moves')}
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors"
           >
-            {isRunning ? (
-              <>
-                <Pause className="w-4 h-4" />
-                <span>Pause Analysis</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                <span>Start Analysis</span>
-              </>
+            <span className="text-xs text-white/50 uppercase tracking-wider">Move History</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-white/20">{state.moves.length} moves</span>
+              <motion.div
+                animate={{ rotate: expandedSections.moves ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-3.5 h-3.5 text-white/20" />
+              </motion.div>
+            </div>
+          </button>
+          <AnimatePresence>
+            {expandedSections.moves && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-5 pb-4">
+                  <MovesList moves={state.moves} />
+                </div>
+              </motion.div>
             )}
-          </motion.button>
+          </AnimatePresence>
+        </div>
 
-          <div className="flex gap-2">
-            <motion.button
-              whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-              whileTap={{ scale: 0.98 }}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white/70 text-sm transition-colors"
+        {/* Win Probability Graph - Collapsible */}
+        <div className="border-b border-white/[0.06]">
+          <button
+            onClick={() => toggleSection('graph')}
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors"
+          >
+            <span className="text-xs text-white/50 uppercase tracking-wider">Win Probability</span>
+            <motion.div
+              animate={{ rotate: expandedSections.graph ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <Eye className="w-4 h-4" />
-              <span>Hide</span>
-            </motion.button>
+              <ChevronDown className="w-3.5 h-3.5 text-white/20" />
+            </motion.div>
+          </button>
+          <AnimatePresence>
+            {expandedSections.graph && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-5 pb-4">
+                  <WinProbabilityGraph data={state.winHistory} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-            <motion.button
-              whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-              whileTap={{ scale: 0.98 }}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white/70 text-sm transition-colors"
+        {/* Keyboard Shortcuts - Collapsible */}
+        <div className="border-b border-white/[0.06]">
+          <button
+            onClick={() => toggleSection('shortcuts')}
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Keyboard className="w-3.5 h-3.5 text-white/20" />
+              <span className="text-xs text-white/50 uppercase tracking-wider">Shortcuts</span>
+            </div>
+            <motion.div
+              animate={{ rotate: expandedSections.shortcuts ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <Settings className="w-4 h-4" />
-              <span>Settings</span>
-            </motion.button>
-          </div>
+              <ChevronDown className="w-3.5 h-3.5 text-white/20" />
+            </motion.div>
+          </button>
+          <AnimatePresence>
+            {expandedSections.shortcuts && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-5 pb-4 space-y-2">
+                  {[
+                    { keys: 'Ctrl+Shift+X', action: 'Toggle Panel' },
+                    { keys: 'Ctrl+Shift+S', action: 'Start / Pause' },
+                    { keys: 'Ctrl+Shift+A', action: 'Auto-Move' },
+                  ].map(shortcut => (
+                    <div key={shortcut.keys} className="flex items-center justify-between">
+                      <span className="text-xs text-white/40">{shortcut.action}</span>
+                      <kbd className="text-[10px] font-mono text-white/30 bg-white/[0.04] border border-white/[0.06] rounded px-1.5 py-0.5">
+                        {shortcut.keys}
+                      </kbd>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+
+      {/* ── Footer ── */}
+      <div className="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3 h-3 text-cyan-400/40" />
+          <span className="text-[10px] text-white/20">Stockfish NNUE</span>
+        </div>
+        <span className="text-[10px] text-white/15 font-mono">v0.1.0</span>
+      </div>
+    </div>
   );
 }
