@@ -3,16 +3,22 @@ import { TransparentOverlay } from '@/app/components/TransparentOverlay';
 import { SettingsControl } from '@/app/components/SettingsControl';
 import { MinimizedButton } from '@/app/components/MinimizedButton';
 import { detectChessBoard } from '@/utils/boardDetection';
-import { CalibrationFrame } from '@/app/components/CalibrationFrame';
 
 declare global {
   interface Window {
     electronAPI?: {
       setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
+      resizeWindow: (width: number, height: number) => void;
       getDesktopSources: () => Promise<any[]>;
+      checkScreenPermission: () => Promise<string>;
     };
   }
 }
+
+const WIDGET_WIDTH = 380;
+const WIDGET_HEIGHT = 620;
+const MINIMIZED_WIDTH = 80;
+const MINIMIZED_HEIGHT = 160;
 
 export default function App() {
   // UI State
@@ -21,14 +27,18 @@ export default function App() {
 
   // Engine State
   const [engineStatus, setEngineStatus] = useState<'idle' | 'analyzing' | 'ready'>('analyzing');
-  const [currentScore, setCurrentScore] = useState(45); // centipawns
+  const [currentScore, setCurrentScore] = useState(45);
   const [aiDepth, setAiDepth] = useState(20);
 
   // Settings
   const [autoMoveEnabled, setAutoMoveEnabled] = useState(false);
   const [humanDelay, setHumanDelay] = useState(1000);
 
-  // Mock data for demonstration
+  // Board detection
+  const [boardRect, setBoardRect] = useState({ x: 100, y: 100, width: 600, height: 600 });
+  const [isDetecting, setIsDetecting] = useState(false);
+
+  // Mock data
   const bestMove = 'Nf3';
   const topMoves = [
     { notation: 'Nf3', evaluation: 45, isBest: true },
@@ -36,29 +46,33 @@ export default function App() {
     { notation: 'd4', evaluation: 28, centipawnLoss: 17 },
   ];
 
-  // Calibration State - Default to true to force calibration on start if not detected
-  const [isCalibrating, setIsCalibrating] = useState(false);
-  const [boardRect, setBoardRect] = useState({ x: 100, y: 100, width: 600, height: 600 });
-  const [isDetecting, setIsDetecting] = useState(true);
+  // Resize window when toggling HUD visibility
+  const handleMinimize = () => {
+    setIsHudVisible(false);
+    window.electronAPI?.resizeWindow(MINIMIZED_WIDTH, MINIMIZED_HEIGHT);
+  };
 
-  // Set default click-through behavior on mount
-  useEffect(() => {
-    if (window.electronAPI) {
-      // Default to click-through mode (widget behavior)
-      window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
-    }
-  }, []);
+  const handleExpand = () => {
+    setIsHudVisible(true);
+    window.electronAPI?.resizeWindow(WIDGET_WIDTH, WIDGET_HEIGHT);
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+H: Toggle HUD visibility
       if (e.ctrlKey && e.key === 'h') {
         e.preventDefault();
-        setIsHudVisible((prev) => !prev);
+        setIsHudVisible((prev) => {
+          const next = !prev;
+          if (next) {
+            window.electronAPI?.resizeWindow(WIDGET_WIDTH, WIDGET_HEIGHT);
+          } else {
+            window.electronAPI?.resizeWindow(MINIMIZED_WIDTH, MINIMIZED_HEIGHT);
+          }
+          return next;
+        });
       }
 
-      // Ctrl+S: Toggle settings
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         setIsSettingsOpen((prev) => !prev);
@@ -69,68 +83,49 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const confirmCalibration = () => {
-    setIsCalibrating(false);
-    if (window.electronAPI) {
-      window.electronAPI.setIgnoreMouseEvents(true, { forward: true }); // Passthrough to game
-    }
-  };
-
+  // Board detection via screen capture
   const runScan = async () => {
     setIsDetecting(true);
     try {
+      const permission = await window.electronAPI?.checkScreenPermission();
+      if (permission !== 'granted') {
+        console.warn('Screen recording permission not granted:', permission);
+        return;
+      }
+
       const sources = await window.electronAPI?.getDesktopSources();
       if (sources && sources.length > 0) {
-        // Assuming the first source is the primary screen or the one we want to scan
         const sourceId = sources[0].id;
-        const detectedRect = await detectChessBoard(sourceId);
+
+        // Create a proper MediaStream from the Electron desktop source
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: sourceId,
+            }
+          } as any
+        });
+
+        const detectedRect = await detectChessBoard(stream);
         if (detectedRect) {
           setBoardRect(detectedRect);
-        } else {
-          console.log("No chessboard detected.");
         }
       }
     } catch (error) {
-      console.error("Error during board detection:", error);
+      console.error('Error during board detection:', error);
     } finally {
       setIsDetecting(false);
     }
   };
 
   return (
-    // Transparent background for Electron
-    <div 
-      className="relative w-screen h-screen overflow-hidden flex items-center justify-center"
-      style={{ 
-        background: 'transparent',
-        backgroundColor: 'transparent'
-      }}
+    <div
+      className="w-full h-full"
+      style={{ background: 'transparent' }}
     >
-
-      {/* Board Calibration Frame */}
-      {isCalibrating ? (
-        <CalibrationFrame
-          rect={boardRect}
-          onChange={setBoardRect}
-          onConfirm={confirmCalibration}
-          onScan={runScan}
-          isScanning={isDetecting}
-        />
-      ) : (
-        // Static frame when not calibrating
-        <div
-          className="absolute border-4 border-dashed border-cyan-500/30 pointer-events-none rounded-lg transition-all duration-300"
-          style={{
-            left: boardRect.x,
-            top: boardRect.y,
-            width: boardRect.width,
-            height: boardRect.height
-          }}
-        />
-      )}
-
-      {/* Transparent Overlay UI */}
-      {isHudVisible && (
+      {isHudVisible ? (
         <TransparentOverlay
           engineStatus={engineStatus}
           depth={aiDepth}
@@ -141,22 +136,18 @@ export default function App() {
           autoMoveEnabled={autoMoveEnabled}
           onAutoMoveChange={setAutoMoveEnabled}
           onSettingsClick={() => setIsSettingsOpen(true)}
-          onMinimizeClick={() => setIsHudVisible(false)}
+          onMinimizeClick={handleMinimize}
         />
-      )}
-
-      {/* Minimized Button */}
-      {!isHudVisible && (
+      ) : (
         <MinimizedButton
-          onClick={() => setIsHudVisible(true)}
+          onClick={handleExpand}
           onSettingsClick={() => {
+            handleExpand();
             setIsSettingsOpen(true);
-            setIsHudVisible(true);
           }}
         />
       )}
 
-      {/* Settings Modal (outside main container) */}
       <SettingsControl
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

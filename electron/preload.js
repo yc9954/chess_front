@@ -2,16 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     setIgnoreMouseEvents: (ignore, options) => ipcRenderer.send('set-ignore-mouse-events', ignore, options),
-    getDesktopSources: () => ipcRenderer.invoke('get-desktop-sources')
+    resizeWindow: (width, height) => ipcRenderer.send('resize-window', width, height),
+    getDesktopSources: () => ipcRenderer.invoke('get-desktop-sources'),
+    checkScreenPermission: () => ipcRenderer.invoke('check-screen-permission'),
 });
-
-window.addEventListener('DOMContentLoaded', () => {
-    const replaceText = (selector, text) => {
-        const element = document.getElementById(selector)
-        if (element) element.innerText = text
-    }
-
-    for (const type of ['chrome', 'node', 'electron']) {
-        replaceText(`${type}-version`, process.versions[type])
-    }
-})

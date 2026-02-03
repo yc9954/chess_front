@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, systemPreferences } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,14 +10,25 @@ let mainWindow;
 // Suppress D-Bus errors in WSL
 process.env.DBUS_SESSION_BUS_ADDRESS = '/dev/null';
 
+const WIDGET_WIDTH = 380;
+const WIDGET_HEIGHT = 620;
+const MINIMIZED_WIDTH = 80;
+const MINIMIZED_HEIGHT = 160;
+
 function createWindow() {
+    const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+
     mainWindow = new BrowserWindow({
-        fullscreen: true, // Start in fullscreen
+        width: WIDGET_WIDTH,
+        height: WIDGET_HEIGHT,
+        x: screenWidth - WIDGET_WIDTH - 20,
+        y: 40,
         transparent: true,
-        backgroundColor: '#00FFFFFF', // Fully transparent background (ARGB format)
+        backgroundColor: '#00000000',
         frame: false,
-        alwaysOnTop: true,
-        hasShadow: false, // Remove shadow for better transparency
+        hasShadow: false,
+        resizable: false,
+        skipTaskbar: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -26,46 +37,49 @@ function createWindow() {
         }
     });
 
-    // Ensure transparency is maintained
-    mainWindow.setBackgroundColor('#00FFFFFF');
+    // macOS: use 'floating' level to stay above normal windows
+    mainWindow.setAlwaysOnTop(true, 'floating');
 
-    // Initially ignore mouse events to allow click-through (widget mode)
-    // UI components will enable mouse events when hovered
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+    if (process.platform === 'darwin') {
+        mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    }
 
-    // In dev, load vite server
-    // In prod, load index.html
-    // For now, assuming dev mode mostly as user is tweaking
-    // But we need to handle the URL.
-    // We'll check if a dev server is running or fallback to file.
-
-    // NOTE: Ideally we check env vars, but hardcoding localhost:5173 for dev speed for now
-    // or checking command line args.
     mainWindow.loadURL('http://localhost:5173');
-    
-    // Ensure transparency after load
-    mainWindow.webContents.once('did-finish-load', () => {
-        mainWindow.setBackgroundColor('#00FFFFFF');
-    });
 }
 
 app.whenReady().then(() => {
     createWindow();
 
-    // IPC handler for mouse event control
+    // IPC: toggle mouse event passthrough
     ipcMain.on('set-ignore-mouse-events', (event, ignore, options = {}) => {
         const win = BrowserWindow.fromWebContents(event.sender);
         if (win && !win.isDestroyed()) {
-            console.log('Setting ignore mouse events:', ignore, options);
             win.setIgnoreMouseEvents(ignore, { forward: true, ...options });
         }
     });
 
-    // IPC handler for capturing desktop sources
+    // IPC: resize widget window (for minimize / expand)
+    ipcMain.on('resize-window', (event, width, height) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win && !win.isDestroyed()) {
+            win.setSize(width, height, true);
+        }
+    });
+
+    // IPC: get desktop capture sources
     ipcMain.handle('get-desktop-sources', async () => {
         const { desktopCapturer } = await import('electron');
         const sources = await desktopCapturer.getSources({ types: ['screen'] });
         return sources;
+    });
+
+    // IPC: check macOS screen recording permission
+    ipcMain.handle('check-screen-permission', async () => {
+        if (process.platform === 'darwin') {
+            const status = systemPreferences.getMediaAccessStatus('screen');
+            return status;
+        }
+        return 'granted';
     });
 
     app.on('activate', () => {
