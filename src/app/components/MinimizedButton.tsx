@@ -1,49 +1,27 @@
 import React from 'react';
 import { Maximize2, Settings } from 'lucide-react';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
-    };
-  }
-}
-
 interface MinimizedButtonProps {
   onClick: () => void;
   onSettingsClick: () => void;
 }
 
 export function MinimizedButton({ onClick, onSettingsClick }: MinimizedButtonProps) {
-  const setIgnore = (ignore: boolean) => {
-    if (window.electronAPI) {
-      console.log('MinimizedButton: setIgnore', ignore);
-      window.electronAPI.setIgnoreMouseEvents(ignore, { forward: true });
-    }
-  };
-
   return (
-    <div
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
-      onMouseEnter={() => setIgnore(false)} // Enable clicks when hovering buttons
-      onMouseLeave={() => setIgnore(true)} // Allow passthrough when leaving
-    >
-      {/* Settings button */}
-      <button
-        onClick={onSettingsClick}
-        className="group p-3 rounded-2xl bg-slate-900/20 backdrop-blur-3xl border border-white/20 hover:border-white/40 hover:bg-slate-900/30 transition-all shadow-xl hover:shadow-2xl"
-        title="Open Settings (Ctrl+S)"
-      >
-        <Settings className="w-5 h-5 text-white/80 group-hover:text-white transition-colors" />
-      </button>
-
-      {/* Expand button */}
+    <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-2">
       <button
         onClick={onClick}
-        className="group p-3 rounded-2xl bg-gradient-to-br from-cyan-900/20 to-blue-900/20 backdrop-blur-3xl border border-white/20 hover:border-white/40 hover:from-cyan-900/30 hover:to-blue-900/30 transition-all shadow-xl hover:shadow-2xl hover:shadow-cyan-400/20"
+        className="p-4 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/15 hover:border-cyan-300/30 hover:bg-slate-800/90 transition-all shadow-xl"
         title="Expand HUD (Ctrl+H)"
       >
-        <Maximize2 className="w-5 h-5 text-cyan-300 group-hover:text-cyan-200 transition-colors" />
+        <Maximize2 className="w-5 h-5 text-cyan-300" />
+      </button>
+      <button
+        onClick={onSettingsClick}
+        className="p-3 rounded-xl bg-slate-900/60 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:bg-slate-800/70 transition-all"
+        title="Settings (Ctrl+S)"
+      >
+        <Settings className="w-4 h-4 text-white/60" />
       </button>
     </div>
   );
