@@ -57,7 +57,7 @@ export function LiquidGlass({
         isolation: 'isolate',
       }}
     >
-      {/* Background blur layer */}
+      {/* Background blur layer - Apple style */}
       <div
         className="liquid-glass-backdrop"
         style={{
@@ -65,71 +65,46 @@ export function LiquidGlass({
           inset: 0,
           backdropFilter: `blur(${blurAmount}px) saturate(180%)`,
           WebkitBackdropFilter: `blur(${blurAmount}px) saturate(180%)`,
-          backgroundColor: `rgba(15, 23, 42, ${opacity})`,
+          backgroundColor: `rgba(255, 255, 255, ${opacity * 0.6})`,
           zIndex: -1,
         }}
       />
 
-      {/* Gradient overlay */}
-      <div
-        className="liquid-glass-gradient"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `
-            radial-gradient(
-              800px circle at ${mousePosition.x}% ${mousePosition.y}%,
-              rgba(99, 102, 241, ${isHovering ? 0.15 : 0.08}),
-              transparent 40%
-            )
-          `,
-          opacity: isHovering ? 1 : 0,
-          transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Subtle gradient overlay - very minimal */}
+      {enableHoverEffect && (
+        <div
+          className="liquid-glass-gradient"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `
+              radial-gradient(
+                1000px circle at ${mousePosition.x}% ${mousePosition.y}%,
+                rgba(255, 255, 255, ${isHovering ? 0.3 : 0.1}),
+                transparent 50%
+              )
+            `,
+            opacity: isHovering ? 0.5 : 0.2,
+            transition: 'opacity 0.8s ease-out',
+            zIndex: -1,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
 
-      {/* Shimmer effect */}
-      <div
-        className="liquid-glass-shimmer"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `
-            linear-gradient(
-              135deg,
-              transparent 0%,
-              rgba(255, 255, 255, ${isHovering ? 0.1 : 0.05}) 50%,
-              transparent 100%
-            )
-          `,
-          transform: `translate(${mousePosition.x / 10 - 5}%, ${mousePosition.y / 10 - 5}%)`,
-          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Border glow */}
+      {/* Subtle border - Apple style */}
       <div
         className="liquid-glass-border"
         style={{
           position: 'absolute',
           inset: 0,
           borderRadius: `${borderRadius}px`,
-          padding: '1px',
-          background: `
-            linear-gradient(
-              ${Math.atan2(mousePosition.y - 50, mousePosition.x - 50) * (180 / Math.PI) + 90}deg,
-              rgba(255, 255, 255, ${isHovering ? 0.3 : 0.15}),
-              rgba(255, 255, 255, 0.05)
-            )
+          border: '1px solid rgba(255, 255, 255, 0.5)',
+          boxShadow: `
+            0 4px 24px -4px rgba(0, 0, 0, 0.1),
+            0 2px 6px -2px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.8)
           `,
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-          maskComposite: 'exclude',
-          transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
           zIndex: 1,
           pointerEvents: 'none',
         }}

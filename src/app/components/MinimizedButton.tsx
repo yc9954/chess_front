@@ -21,7 +21,7 @@ export function MinimizedButton({ onClick, onSettingsClick }: MinimizedButtonPro
           className="p-4 w-full h-full flex items-center justify-center hover:scale-105 transition-transform"
           title="Expand HUD (Ctrl+H)"
         >
-          <Maximize2 className="w-5 h-5 text-cyan-300" />
+          <Maximize2 className="w-5 h-5 text-blue-600" />
         </button>
       </LiquidGlass>
 
@@ -36,7 +36,7 @@ export function MinimizedButton({ onClick, onSettingsClick }: MinimizedButtonPro
           className="p-3 w-full h-full flex items-center justify-center hover:scale-105 transition-transform"
           title="Settings (Ctrl+S)"
         >
-          <Settings className="w-4 h-4 text-white/60" />
+          <Settings className="w-4 h-4 text-gray-700" />
         </button>
       </LiquidGlass>
     </div>
