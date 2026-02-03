@@ -53,8 +53,8 @@ export function WidgetSettings({
             value={[config.blurAmount]}
             onValueChange={([value]) => handleChange('blurAmount', value)}
             min={0}
-            max={40}
-            step={2}
+            max={10}
+            step={0.5}
             className="w-full"
           />
         </div>
@@ -71,8 +71,8 @@ export function WidgetSettings({
           <Slider
             value={[config.opacity * 100]}
             onValueChange={([value]) => handleChange('opacity', value / 100)}
-            min={50}
-            max={100}
+            min={5}
+            max={50}
             step={5}
             className="w-full"
           />

@@ -31,8 +31,8 @@ export default function App() {
   const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(() => {
     const saved = localStorage.getItem('widgetConfig');
     return saved ? JSON.parse(saved) : {
-      blurAmount: 24,
-      opacity: 0.85,
+      blurAmount: 2,
+      opacity: 0.15,
       scale: 1,
       enableEffects: true,
     };
