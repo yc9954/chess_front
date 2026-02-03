@@ -1,12 +1,20 @@
 import React from 'react';
-import { Brain, Zap, TrendingUp, ArrowRight, AlertTriangle, Settings, Minimize2, Target } from 'lucide-react';
+import { Brain, Zap, TrendingUp, ArrowRight, AlertTriangle, Settings, Minimize2, Target, Droplets } from 'lucide-react';
 import { Switch } from '@/app/components/ui/switch';
+import { LiquidGlass } from '@/app/components/LiquidGlass';
 
 interface Move {
   notation: string;
   evaluation: number;
   centipawnLoss?: number;
   isBest?: boolean;
+}
+
+interface WidgetConfig {
+  blurAmount: number;
+  opacity: number;
+  scale: number;
+  enableEffects: boolean;
 }
 
 interface TransparentOverlayProps {
@@ -19,7 +27,9 @@ interface TransparentOverlayProps {
   autoMoveEnabled: boolean;
   onAutoMoveChange: (enabled: boolean) => void;
   onSettingsClick: () => void;
+  onWidgetSettingsClick?: () => void;
   onMinimizeClick: () => void;
+  widgetConfig?: WidgetConfig;
 }
 
 export function TransparentOverlay({
@@ -32,7 +42,14 @@ export function TransparentOverlay({
   autoMoveEnabled,
   onAutoMoveChange,
   onSettingsClick,
+  onWidgetSettingsClick,
   onMinimizeClick,
+  widgetConfig = {
+    blurAmount: 24,
+    opacity: 0.85,
+    scale: 1,
+    enableEffects: true,
+  },
 }: TransparentOverlayProps) {
   const statusConfig = {
     idle: { color: 'text-gray-400', bg: 'bg-gray-500/20', dotBg: 'bg-gray-400', label: 'Idle' },
@@ -48,7 +65,17 @@ export function TransparentOverlay({
   const displayScore = Math.abs(score / 100).toFixed(1);
 
   return (
-    <div className="w-full h-full flex flex-col rounded-2xl overflow-hidden border border-white/15 bg-slate-900/85 backdrop-blur-2xl shadow-2xl">
+    <LiquidGlass
+      blurAmount={widgetConfig.blurAmount}
+      opacity={widgetConfig.opacity}
+      borderRadius={16}
+      enableHoverEffect={widgetConfig.enableEffects}
+      className="w-full h-full"
+    >
+      <div
+        className="w-full h-full flex flex-col overflow-hidden shadow-2xl"
+        style={{ transform: `scale(${widgetConfig.scale})`, transformOrigin: 'top left' }}
+      >
 
       {/* Header — draggable */}
       <div
@@ -69,6 +96,15 @@ export function TransparentOverlay({
           className="flex items-center gap-1.5"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
+          {onWidgetSettingsClick && (
+            <button
+              onClick={onWidgetSettingsClick}
+              className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-300/20 hover:bg-cyan-500/20 hover:border-cyan-300/40 transition-all"
+              title="Liquid Glass Settings (Ctrl+L)"
+            >
+              <Droplets className="w-3.5 h-3.5 text-cyan-300" />
+            </button>
+          )}
           <button
             onClick={onSettingsClick}
             className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all"
@@ -195,11 +231,13 @@ export function TransparentOverlay({
 
       {/* Footer shortcuts */}
       <div className="px-4 py-2 border-t border-white/5 bg-white/[0.02]">
-        <div className="flex items-center justify-center gap-4 text-[10px] text-white/30 font-mono">
+        <div className="flex items-center justify-center gap-3 text-[10px] text-white/30 font-mono">
           <span>Ctrl+H Toggle</span>
           <span>Ctrl+S Settings</span>
+          {onWidgetSettingsClick && <span className="text-cyan-300/50">Ctrl+L Glass</span>}
         </div>
       </div>
-    </div>
+      </div>
+    </LiquidGlass>
   );
 }
