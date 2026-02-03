@@ -1,6 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Check, ScanSearch } from 'lucide-react';
 
+declare global {
+  interface Window {
+    electronAPI?: {
+      setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
+    };
+  }
+}
+
 interface Rect {
     x: number;
     y: number;
@@ -75,6 +83,12 @@ export function CalibrationFrame({ rect, onChange, onConfirm, onScan, isScanning
         };
     }, [isDragging, isResizing, dragOffset, rect, onChange]);
 
+    const setIgnore = (ignore: boolean) => {
+        if (window.electronAPI) {
+            window.electronAPI.setIgnoreMouseEvents(ignore, { forward: true });
+        }
+    };
+
     return (
         <div
             ref={frameRef}
@@ -87,6 +101,8 @@ export function CalibrationFrame({ rect, onChange, onConfirm, onScan, isScanning
                 cursor: isDragging ? 'grabbing' : 'move',
             }}
             onMouseDown={handleMouseDown}
+            onMouseEnter={() => setIgnore(false)} // Enable clicks when hovering calibration frame
+            onMouseLeave={() => setIgnore(true)} // Allow passthrough when leaving
         >
             {/* Header/Controls */}
             <div className="absolute -top-10 left-0 right-0 flex items-center justify-between">

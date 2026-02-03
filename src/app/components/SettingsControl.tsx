@@ -6,7 +6,7 @@ import { Slider } from '@/app/components/ui/slider';
 declare global {
   interface Window {
     electronAPI?: {
-      setIgnoreMouseEvents: (ignore: boolean) => void;
+      setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
     };
   }
 }
@@ -37,15 +37,15 @@ export function SettingsControl({
   const setIgnore = (ignore: boolean) => {
     if (window.electronAPI) {
       console.log('SettingsControl: setIgnore', ignore);
-      window.electronAPI.setIgnoreMouseEvents(ignore);
+      window.electronAPI.setIgnoreMouseEvents(ignore, { forward: true });
     }
   };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xl pointer-events-auto"
-      onMouseEnter={() => setIgnore(false)}
-      onMouseLeave={() => setIgnore(false)} // Keep clicks enabled
+      onMouseEnter={() => setIgnore(false)} // Enable clicks when hovering settings
+      onMouseLeave={() => setIgnore(true)} // Allow passthrough when leaving
     >
       <div className="w-full max-w-md rounded-3xl bg-white/10 backdrop-blur-3xl border border-white/30 shadow-2xl overflow-hidden">
         {/* Header */}

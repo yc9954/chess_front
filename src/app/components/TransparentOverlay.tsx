@@ -5,7 +5,7 @@ import { Switch } from '@/app/components/ui/switch';
 declare global {
   interface Window {
     electronAPI?: {
-      setIgnoreMouseEvents: (ignore: boolean) => void;
+      setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
     };
   }
 }
@@ -60,21 +60,21 @@ export function TransparentOverlay({
   const setIgnoreMouseEvents = (ignore: boolean) => {
     if (window.electronAPI) {
       console.log('Setting ignore mouse events:', ignore);
-      window.electronAPI.setIgnoreMouseEvents(ignore);
+      window.electronAPI.setIgnoreMouseEvents(ignore, { forward: true });
     }
   };
 
-  // For buttons - disable click-through when hovering
+  // For interactive elements - enable clicks when hovering, disable when leaving
   const interactiveHandlers = {
-    onMouseEnter: () => setIgnoreMouseEvents(false),
-    onMouseLeave: () => setIgnoreMouseEvents(false), // Keep it false to ensure buttons work
+    onMouseEnter: () => setIgnoreMouseEvents(false), // Enable clicks on UI
+    onMouseLeave: () => setIgnoreMouseEvents(true), // Disable clicks, allow passthrough
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <>
       {/* Top Bar */}
       <div
-        className="absolute top-0 left-0 right-0 px-6 py-3 bg-slate-900/20 backdrop-blur-xl border-b border-white/10 shadow-lg z-50"
+        className="absolute top-0 left-0 right-0 px-6 py-3 bg-slate-900/20 backdrop-blur-xl border-b border-white/10 shadow-lg z-50 pointer-events-auto"
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         {...interactiveHandlers}
       >
@@ -256,6 +256,6 @@ export function TransparentOverlay({
           <p>Ctrl+B: Toggle Scores</p>
         </div>
       </div>
-    </div>
+    </>
   );
 }

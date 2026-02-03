@@ -8,7 +8,7 @@ import { CalibrationFrame } from '@/app/components/CalibrationFrame';
 declare global {
   interface Window {
     electronAPI?: {
-      setIgnoreMouseEvents: (ignore: boolean) => void;
+      setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
       getDesktopSources: () => Promise<any[]>;
     };
   }
@@ -41,6 +41,14 @@ export default function App() {
   const [boardRect, setBoardRect] = useState({ x: 100, y: 100, width: 600, height: 600 });
   const [isDetecting, setIsDetecting] = useState(true);
 
+  // Set default click-through behavior on mount
+  useEffect(() => {
+    if (window.electronAPI) {
+      // Default to click-through mode (widget behavior)
+      window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+    }
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -64,7 +72,7 @@ export default function App() {
   const confirmCalibration = () => {
     setIsCalibrating(false);
     if (window.electronAPI) {
-      window.electronAPI.setIgnoreMouseEvents(true); // Passthrough to game
+      window.electronAPI.setIgnoreMouseEvents(true, { forward: true }); // Passthrough to game
     }
   };
 
@@ -91,7 +99,13 @@ export default function App() {
 
   return (
     // Transparent background for Electron
-    <div className="relative w-screen h-screen overflow-hidden flex items-center justify-center bg-transparent">
+    <div 
+      className="relative w-screen h-screen overflow-hidden flex items-center justify-center"
+      style={{ 
+        background: 'transparent',
+        backgroundColor: 'transparent'
+      }}
+    >
 
       {/* Board Calibration Frame */}
       {isCalibrating ? (

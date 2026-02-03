@@ -4,7 +4,7 @@ import { Maximize2, Settings } from 'lucide-react';
 declare global {
   interface Window {
     electronAPI?: {
-      setIgnoreMouseEvents: (ignore: boolean) => void;
+      setIgnoreMouseEvents: (ignore: boolean, options?: any) => void;
     };
   }
 }
@@ -18,15 +18,15 @@ export function MinimizedButton({ onClick, onSettingsClick }: MinimizedButtonPro
   const setIgnore = (ignore: boolean) => {
     if (window.electronAPI) {
       console.log('MinimizedButton: setIgnore', ignore);
-      window.electronAPI.setIgnoreMouseEvents(ignore);
+      window.electronAPI.setIgnoreMouseEvents(ignore, { forward: true });
     }
   };
 
   return (
     <div
       className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
-      onMouseEnter={() => setIgnore(false)}
-      onMouseLeave={() => setIgnore(false)} // Keep clicks enabled for buttons
+      onMouseEnter={() => setIgnore(false)} // Enable clicks when hovering buttons
+      onMouseLeave={() => setIgnore(true)} // Allow passthrough when leaving
     >
       {/* Settings button */}
       <button

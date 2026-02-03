@@ -14,18 +14,24 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         fullscreen: true, // Start in fullscreen
         transparent: true,
+        backgroundColor: '#00FFFFFF', // Fully transparent background (ARGB format)
         frame: false,
         alwaysOnTop: true,
+        hasShadow: false, // Remove shadow for better transparency
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
+            backgroundThrottling: false,
         }
     });
 
-    // Initially DO NOT ignore mouse events - buttons should be clickable
-    // Components will handle their own transparency via IPC
-    mainWindow.setIgnoreMouseEvents(false);
+    // Ensure transparency is maintained
+    mainWindow.setBackgroundColor('#00FFFFFF');
+
+    // Initially ignore mouse events to allow click-through (widget mode)
+    // UI components will enable mouse events when hovered
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
 
     // In dev, load vite server
     // In prod, load index.html
@@ -36,17 +42,22 @@ function createWindow() {
     // NOTE: Ideally we check env vars, but hardcoding localhost:5173 for dev speed for now
     // or checking command line args.
     mainWindow.loadURL('http://localhost:5173');
+    
+    // Ensure transparency after load
+    mainWindow.webContents.once('did-finish-load', () => {
+        mainWindow.setBackgroundColor('#00FFFFFF');
+    });
 }
 
 app.whenReady().then(() => {
     createWindow();
 
     // IPC handler for mouse event control
-    ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
+    ipcMain.on('set-ignore-mouse-events', (event, ignore, options = {}) => {
         const win = BrowserWindow.fromWebContents(event.sender);
         if (win && !win.isDestroyed()) {
-            console.log('Setting ignore mouse events:', ignore);
-            win.setIgnoreMouseEvents(ignore, { forward: true });
+            console.log('Setting ignore mouse events:', ignore, options);
+            win.setIgnoreMouseEvents(ignore, { forward: true, ...options });
         }
     });
 

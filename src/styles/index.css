@@ -2,9 +2,33 @@
 @import './tailwind.css';
 @import './theme.css';
 
-html, body, #root {
+* {
+  box-sizing: border-box;
+}
+
+html {
   background-color: transparent !important;
+  background: transparent !important;
   height: 100%;
   margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background-color: transparent !important;
+  background: transparent !important;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#root {
+  background-color: transparent !important;
+  background: transparent !important;
+  height: 100%;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
 }
