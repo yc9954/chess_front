@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TransparentOverlay } from '@/app/components/TransparentOverlay';
 import { SettingsControl } from '@/app/components/SettingsControl';
 import { MinimizedButton } from '@/app/components/MinimizedButton';
+import { WidgetSettings, WidgetConfig } from '@/app/components/WidgetSettings';
 import { detectChessBoard } from '@/utils/boardDetection';
 
 declare global {
@@ -24,6 +25,18 @@ export default function App() {
   // UI State
   const [isHudVisible, setIsHudVisible] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false);
+
+  // Widget configuration with localStorage persistence
+  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(() => {
+    const saved = localStorage.getItem('widgetConfig');
+    return saved ? JSON.parse(saved) : {
+      blurAmount: 24,
+      opacity: 0.85,
+      scale: 1,
+      enableEffects: true,
+    };
+  });
 
   // Engine State
   const [engineStatus, setEngineStatus] = useState<'idle' | 'analyzing' | 'ready'>('analyzing');
@@ -57,6 +70,11 @@ export default function App() {
     window.electronAPI?.resizeWindow(WIDGET_WIDTH, WIDGET_HEIGHT);
   };
 
+  // Save widget config to localStorage
+  useEffect(() => {
+    localStorage.setItem('widgetConfig', JSON.stringify(widgetConfig));
+  }, [widgetConfig]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -76,6 +94,11 @@ export default function App() {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         setIsSettingsOpen((prev) => !prev);
+      }
+
+      if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        setIsWidgetSettingsOpen((prev) => !prev);
       }
     };
 
@@ -126,18 +149,29 @@ export default function App() {
       style={{ background: 'transparent' }}
     >
       {isHudVisible ? (
-        <TransparentOverlay
-          engineStatus={engineStatus}
-          depth={aiDepth}
-          nodesPerSecond={1250000}
-          score={currentScore}
-          bestMove={bestMove}
-          topMoves={topMoves}
-          autoMoveEnabled={autoMoveEnabled}
-          onAutoMoveChange={setAutoMoveEnabled}
-          onSettingsClick={() => setIsSettingsOpen(true)}
-          onMinimizeClick={handleMinimize}
-        />
+        <div className="relative w-full h-full">
+          {isWidgetSettingsOpen && (
+            <WidgetSettings
+              config={widgetConfig}
+              onConfigChange={setWidgetConfig}
+              onClose={() => setIsWidgetSettingsOpen(false)}
+            />
+          )}
+          <TransparentOverlay
+            engineStatus={engineStatus}
+            depth={aiDepth}
+            nodesPerSecond={1250000}
+            score={currentScore}
+            bestMove={bestMove}
+            topMoves={topMoves}
+            autoMoveEnabled={autoMoveEnabled}
+            onAutoMoveChange={setAutoMoveEnabled}
+            onSettingsClick={() => setIsSettingsOpen(true)}
+            onWidgetSettingsClick={() => setIsWidgetSettingsOpen(true)}
+            onMinimizeClick={handleMinimize}
+            widgetConfig={widgetConfig}
+          />
+        </div>
       ) : (
         <MinimizedButton
           onClick={handleExpand}
