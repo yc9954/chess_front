@@ -13,29 +13,32 @@ interface BoardArea {
   bottomRight: Position;
 }
 
-interface GlassEffectProps {
+interface GlassCardProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
 
-// Glass Effect Component
-const GlassEffect: React.FC<GlassEffectProps> = ({
+// Glass Card Component (inspired by glass-calendar)
+const GlassCard: React.FC<GlassCardProps> = ({
   children,
   className = "",
   style = {},
 }) => {
   return (
     <div
-      className={`relative flex font-semibold overflow-hidden transition-all duration-300 ${className}`}
+      className={`relative overflow-hidden transition-all duration-500 hover:scale-105 ${className}`}
       style={{
-        background: "rgba(0, 0, 0, 0.4)",
-        backdropFilter: "blur(40px) saturate(180%)",
-        WebkitBackdropFilter: "blur(40px) saturate(180%)",
+        background:
+          "linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)",
+        backdropFilter: "blur(32px) saturate(180%)",
+        WebkitBackdropFilter: "blur(32px) saturate(180%)",
         boxShadow:
           "0 8px 32px 0 rgba(0, 0, 0, 0.37), " +
-          "inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+          "0 1px 2px 0 rgba(0, 0, 0, 0.2), " +
+          "inset 0 0 0 1px rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.18)",
+        borderRadius: "16px",
         willChange: "transform",
         transform: "translateZ(0)",
         ...style,
@@ -51,16 +54,16 @@ const DragHandle: React.FC = () => {
   return (
     <div
       data-tauri-drag-region
-      className="w-full flex items-center justify-center py-2 cursor-move"
+      className="w-full flex items-center justify-center py-3 cursor-move transition-all duration-300 hover:bg-white/5"
       style={{
-        background: "rgba(255, 255, 255, 0.03)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+        background: "linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
       }}
     >
       <div className="flex gap-1.5" style={{ pointerEvents: "none" }}>
-        <div className="w-1 h-1 rounded-full bg-white/30" />
-        <div className="w-1 h-1 rounded-full bg-white/30" />
-        <div className="w-1 h-1 rounded-full bg-white/30" />
+        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
+        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
+        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
       </div>
     </div>
   );
@@ -242,7 +245,7 @@ export const AutoChessComponent = () => {
         bottom: 0,
       }}
     >
-      <GlassEffect
+      <GlassCard
         className="rounded-2xl flex flex-col"
         style={{
           width: "calc(100% - 40px)",
@@ -420,7 +423,7 @@ export const AutoChessComponent = () => {
             </div>
           </div>
         </div>
-      </GlassEffect>
+      </GlassCard>
     </div>
   );
 };
