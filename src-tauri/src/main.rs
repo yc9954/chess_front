@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use enigo::{Enigo, MouseButton, MouseControllable};
+use enigo::{Button, Coordinate, Direction, Enigo, Mouse, Settings};
 use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time::Duration;
@@ -21,14 +21,19 @@ struct MoveCommand {
 // 마우스 클릭 명령
 #[tauri::command]
 fn click_position(x: i32, y: i32) -> Result<String, String> {
-    let mut enigo = Enigo::new();
+    let settings = Settings::default();
+    let mut enigo = Enigo::new(&settings).map_err(|e| format!("Failed to create Enigo: {:?}", e))?;
 
     // 마우스 이동
-    enigo.mouse_move_to(x, y);
+    enigo
+        .move_mouse(x, y, Coordinate::Abs)
+        .map_err(|e| format!("Failed to move mouse: {:?}", e))?;
     thread::sleep(Duration::from_millis(100));
 
     // 클릭
-    enigo.mouse_click(MouseButton::Left);
+    enigo
+        .button(Button::Left, Direction::Click)
+        .map_err(|e| format!("Failed to click: {:?}", e))?;
     thread::sleep(Duration::from_millis(50));
 
     Ok(format!("Clicked at ({}, {})", x, y))
@@ -37,18 +42,27 @@ fn click_position(x: i32, y: i32) -> Result<String, String> {
 // 체스 이동 실행 (from -> to 클릭)
 #[tauri::command]
 fn execute_chess_move(move_cmd: MoveCommand) -> Result<String, String> {
-    let mut enigo = Enigo::new();
+    let settings = Settings::default();
+    let mut enigo = Enigo::new(&settings).map_err(|e| format!("Failed to create Enigo: {:?}", e))?;
 
     // From 위치 클릭
-    enigo.mouse_move_to(move_cmd.from.x, move_cmd.from.y);
+    enigo
+        .move_mouse(move_cmd.from.x, move_cmd.from.y, Coordinate::Abs)
+        .map_err(|e| format!("Failed to move mouse: {:?}", e))?;
     thread::sleep(Duration::from_millis(100));
-    enigo.mouse_click(MouseButton::Left);
+    enigo
+        .button(Button::Left, Direction::Click)
+        .map_err(|e| format!("Failed to click: {:?}", e))?;
     thread::sleep(Duration::from_millis(300));
 
     // To 위치 클릭
-    enigo.mouse_move_to(move_cmd.to.x, move_cmd.to.y);
+    enigo
+        .move_mouse(move_cmd.to.x, move_cmd.to.y, Coordinate::Abs)
+        .map_err(|e| format!("Failed to move mouse: {:?}", e))?;
     thread::sleep(Duration::from_millis(100));
-    enigo.mouse_click(MouseButton::Left);
+    enigo
+        .button(Button::Left, Direction::Click)
+        .map_err(|e| format!("Failed to click: {:?}", e))?;
     thread::sleep(Duration::from_millis(100));
 
     Ok(format!(
@@ -60,8 +74,13 @@ fn execute_chess_move(move_cmd: MoveCommand) -> Result<String, String> {
 // 현재 마우스 위치 가져오기
 #[tauri::command]
 fn get_mouse_position() -> Result<Position, String> {
-    let enigo = Enigo::new();
-    let (x, y) = enigo.mouse_location();
+    let settings = Settings::default();
+    let mut enigo = Enigo::new(&settings).map_err(|e| format!("Failed to create Enigo: {:?}", e))?;
+
+    let (x, y) = enigo
+        .location()
+        .map_err(|e| format!("Failed to get mouse location: {:?}", e))?;
+
     Ok(Position { x, y })
 }
 
