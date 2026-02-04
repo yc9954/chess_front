@@ -29,20 +29,4 @@
     right: 0 !important;
     bottom: 0 !important;
   }
-  
-  /* 전체 윈도우에 blur 효과 항상 적용 */
-  html::before,
-  body::before,
-  #root::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    backdrop-filter: blur(40px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
-    pointer-events: none;
-    z-index: -1;
-  }
 }
