@@ -1,9 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* macOS Color System */
+    --macos-blue: 0, 122, 255;
+    --macos-purple: 175, 82, 222;
+    --macos-pink: 255, 45, 85;
+    --macos-red: 255, 59, 48;
+    --macos-orange: 255, 149, 0;
+    --macos-yellow: 255, 204, 0;
+    --macos-green: 52, 199, 89;
+    --macos-teal: 90, 200, 250;
+    --macos-cyan: 50, 173, 230;
+    --macos-gray: 142, 142, 147;
+
+    /* Glass Colors */
+    --glass-white: 255, 255, 255;
+    --glass-black: 0, 0, 0;
+
+    /* Backdrop */
+    --backdrop-blur: 40px;
+    --backdrop-saturate: 180%;
+
     --background: 0 0% 0% / 0;
     --foreground: 222.2 84% 4.9%;
   }
@@ -11,8 +33,11 @@
 
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+
   html,
   body,
   #root {
@@ -28,5 +53,147 @@
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
+    /* SF Pro 폰트 스타일 (Inter를 대체로 사용) */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    letter-spacing: -0.011em;
   }
+}
+
+/* macOS Glassmorphism 전역 스타일 */
+@layer utilities {
+  .macos-glass {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--glass-white), 0.15) 0%,
+      rgba(var(--glass-white), 0.08) 50%,
+      rgba(var(--glass-white), 0.05) 100%
+    );
+    backdrop-filter: blur(var(--backdrop-blur)) saturate(var(--backdrop-saturate));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur)) saturate(var(--backdrop-saturate));
+    border: 1px solid rgba(var(--glass-white), 0.18);
+    box-shadow:
+      0 8px 32px 0 rgba(var(--glass-black), 0.37),
+      0 2px 8px 0 rgba(var(--glass-black), 0.2),
+      inset 0 0 0 1px rgba(var(--glass-white), 0.12);
+  }
+
+  .macos-glass-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .macos-glass-hover:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--glass-white), 0.18) 0%,
+      rgba(var(--glass-white), 0.1) 50%,
+      rgba(var(--glass-white), 0.08) 100%
+    );
+    box-shadow:
+      0 12px 40px 0 rgba(var(--glass-black), 0.45),
+      0 4px 12px 0 rgba(var(--glass-black), 0.25),
+      inset 0 0 0 1px rgba(var(--glass-white), 0.18);
+  }
+
+  .macos-text-primary {
+    color: rgba(var(--glass-white), 0.95);
+  }
+
+  .macos-text-secondary {
+    color: rgba(var(--glass-white), 0.75);
+  }
+
+  .macos-text-tertiary {
+    color: rgba(var(--glass-white), 0.55);
+  }
+
+  .macos-blue-bg {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--macos-blue), 0.65) 0%,
+      rgba(var(--macos-blue), 0.45) 100%
+    );
+    border: 1px solid rgba(var(--macos-blue), 0.35);
+    box-shadow: 0 4px 16px rgba(var(--macos-blue), 0.35);
+  }
+
+  .macos-green-bg {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--macos-green), 0.65) 0%,
+      rgba(var(--macos-green), 0.45) 100%
+    );
+    border: 1px solid rgba(var(--macos-green), 0.35);
+    box-shadow: 0 4px 16px rgba(var(--macos-green), 0.35);
+  }
+
+  .macos-red-bg {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--macos-red), 0.65) 0%,
+      rgba(var(--macos-red), 0.45) 100%
+    );
+    border: 1px solid rgba(var(--macos-red), 0.35);
+    box-shadow: 0 4px 16px rgba(var(--macos-red), 0.35);
+  }
+
+  .macos-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--glass-white), 0.3) transparent;
+  }
+
+  .macos-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .macos-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .macos-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(var(--glass-white), 0.3);
+    border-radius: 4px;
+  }
+
+  .macos-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--glass-white), 0.45);
+  }
+
+  /* 커서가 밖으로 나가도 blur 유지 */
+  .persistent-blur {
+    backdrop-filter: blur(var(--backdrop-blur)) saturate(var(--backdrop-saturate)) !important;
+    -webkit-backdrop-filter: blur(var(--backdrop-blur)) saturate(var(--backdrop-saturate)) !important;
+  }
+}
+
+/* 애니메이션 */
+@keyframes macos-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes macos-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.macos-fade-in {
+  animation: macos-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.macos-scale-in {
+  animation: macos-scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
