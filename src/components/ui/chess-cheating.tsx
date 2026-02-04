@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
+import {
+  MacOSGlassCard,
+  MacOSButton,
+  MacOSText,
+  MacOSDragHandle,
+  MacOSInput,
+  MacOSScrollView,
+  MacOSBadge,
+  MacOSDivider,
+} from "./macos-glass";
 
 // Types
-interface GlassCardProps {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-  hover?: boolean;
-}
-
 interface SquareProps {
   row: number;
   col: number;
@@ -38,59 +41,6 @@ interface MoveOption {
   depth: number;
 }
 
-// Glass Card Component (inspired by glass-calendar)
-const GlassCard: React.FC<GlassCardProps> = ({
-  children,
-  className = "",
-  style = {},
-  hover = false,
-}) => {
-  return (
-    <div
-      className={`relative overflow-hidden transition-all duration-500 ${
-        hover ? "hover:scale-105" : ""
-      } ${className}`}
-      style={{
-        background:
-          "linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)",
-        backdropFilter: "blur(32px) saturate(180%)",
-        WebkitBackdropFilter: "blur(32px) saturate(180%)",
-        boxShadow:
-          "0 8px 32px 0 rgba(0, 0, 0, 0.37), " +
-          "0 1px 2px 0 rgba(0, 0, 0, 0.2), " +
-          "inset 0 0 0 1px rgba(255, 255, 255, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.18)",
-        borderRadius: "16px",
-        willChange: "transform",
-        transform: "translateZ(0)",
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
-// Drag Handle Component
-const DragHandle: React.FC = () => {
-  return (
-    <div
-      data-tauri-drag-region
-      className="w-full flex items-center justify-center py-3 cursor-move transition-all duration-300 hover:bg-white/5"
-      style={{
-        background: "linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-      }}
-    >
-      <div className="flex gap-1.5" style={{ pointerEvents: "none" }}>
-        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
-        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
-        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
-      </div>
-    </div>
-  );
-};
-
 // Chess Square Component
 const Square: React.FC<SquareProps> = ({
   row,
@@ -102,18 +52,18 @@ const Square: React.FC<SquareProps> = ({
   onClick,
 }) => {
   const isLight = (row + col) % 2 === 0;
-  const bgColor = isLight ? "rgba(240, 217, 181, 0.9)" : "rgba(181, 136, 99, 0.9)";
+  const bgColor = isLight ? "rgba(240, 217, 181, 0.95)" : "rgba(181, 136, 99, 0.95)";
 
   return (
     <div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:brightness-110"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:brightness-110 active:scale-95"
       style={{
         backgroundColor: isHighlighted
-          ? "rgba(255, 255, 0, 0.5)"
+          ? "rgba(var(--macos-yellow), 0.6)"
           : isThreatened
-          ? "rgba(255, 0, 0, 0.4)"
+          ? "rgba(var(--macos-red), 0.5)"
           : isPossibleMove
-          ? "rgba(0, 255, 0, 0.35)"
+          ? "rgba(var(--macos-green), 0.4)"
           : bgColor,
         aspectRatio: "1 / 1",
       }}
@@ -123,7 +73,7 @@ const Square: React.FC<SquareProps> = ({
         <span
           className="font-bold select-none transition-transform duration-200 hover:scale-110"
           style={{
-            textShadow: "0 2px 4px rgba(0,0,0,0.6)",
+            textShadow: "0 3px 6px rgba(0,0,0,0.7)",
             fontSize: "2.5rem",
             lineHeight: "1",
             display: "flex",
@@ -138,8 +88,8 @@ const Square: React.FC<SquareProps> = ({
         <div
           className="absolute w-3 h-3 rounded-full transition-all duration-200 animate-pulse"
           style={{
-            backgroundColor: "rgba(0, 255, 0, 0.7)",
-            boxShadow: "0 0 12px rgba(0, 255, 0, 0.6)",
+            backgroundColor: "rgba(var(--macos-green), 0.8)",
+            boxShadow: "0 0 16px rgba(var(--macos-green), 0.7)",
           }}
         />
       )}
@@ -163,9 +113,7 @@ export const Component = () => {
   const [chatInput, setChatInput] = useState<string>("");
   const [isAiThinking, setIsAiThinking] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
 
-  // 초기 체스 보드
   const initialBoard = [
     ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
     ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
@@ -298,7 +246,7 @@ export const Component = () => {
 
   return (
     <div
-      className="h-full w-full flex items-center justify-center font-light"
+      className="h-full w-full flex items-center justify-center macos-fade-in"
       style={{
         background: "transparent",
         position: "fixed",
@@ -308,9 +256,9 @@ export const Component = () => {
         bottom: 0,
       }}
     >
-      <GlassCard
-        className="flex flex-col"
+      <MacOSGlassCard
         hover={true}
+        className="flex flex-col"
         style={{
           width: "calc(100% - 40px)",
           height: "calc(100% - 40px)",
@@ -319,56 +267,56 @@ export const Component = () => {
           margin: "20px",
         }}
       >
-        <DragHandle />
+        <MacOSDragHandle />
 
         <div className="flex gap-6 items-stretch justify-center w-full h-full p-6" style={{ flex: "1 1 auto", minHeight: 0 }}>
-          <div className="flex flex-col gap-3 flex-shrink-0">
-            <GlassCard hover={true} style={{ padding: "16px" }}>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-4 text-xs" style={{ color: "rgba(255, 255, 255, 0.95)", fontWeight: 400 }}>
-                  <div className="flex items-center gap-2">
-                    <span className="opacity-70">턴:</span>
-                    <span className="font-bold">{isWhiteTurn ? "백" : "흑"}</span>
+          <div className="flex flex-col gap-4 flex-shrink-0">
+            <MacOSGlassCard hover={true} style={{ padding: "20px" }}>
+              <div className="flex flex-col gap-4">
+                {/* 게임 정보 */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <MacOSText variant="secondary" className="text-sm">턴:</MacOSText>
+                    <MacOSBadge variant={isWhiteTurn ? "gray" : "blue"}>
+                      {isWhiteTurn ? "백" : "흑"}
+                    </MacOSBadge>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="opacity-70">이동:</span>
-                    <span className="font-bold">{moveCount}</span>
+                  <div className="flex items-center gap-3">
+                    <MacOSText variant="secondary" className="text-sm">이동:</MacOSText>
+                    <MacOSBadge variant="blue">{moveCount}</MacOSBadge>
                   </div>
-                  {isInCheck && (
-                    <div className="flex items-center gap-2" style={{ color: "#ff6b6b" }}>
-                      <span className="font-bold">체크!</span>
-                    </div>
-                  )}
+                  {isInCheck && <MacOSBadge variant="red">체크!</MacOSBadge>}
                 </div>
 
-                <div className="flex items-center justify-between gap-4 text-sm" style={{ color: "rgba(255, 255, 255, 0.95)", fontWeight: 400 }}>
-                  <div className="flex items-center gap-2">
-                    <span className="opacity-70">평가:</span>
-                    <span
-                      className="font-bold"
-                      style={{
-                        color: evaluation > 0 ? "#51cf66" : evaluation < 0 ? "#ff6b6b" : "rgba(255, 255, 255, 0.95)"
-                      }}
-                    >
+                <MacOSDivider />
+
+                {/* 평가 및 최선의 이동 */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <MacOSText variant="secondary" className="text-sm">평가:</MacOSText>
+                    <MacOSBadge variant={evaluation > 0 ? "green" : evaluation < 0 ? "red" : "gray"}>
                       {evaluation > 0 ? "+" : ""}{evaluation.toFixed(2)}
-                    </span>
+                    </MacOSBadge>
                   </div>
                   {bestMove && (
-                    <div className="flex items-center gap-2">
-                      <span className="opacity-70">최선:</span>
-                      <span className="font-bold font-mono">{bestMove}</span>
+                    <div className="flex items-center gap-3">
+                      <MacOSText variant="secondary" className="text-sm">최선:</MacOSText>
+                      <MacOSBadge variant="blue" className="font-mono">{bestMove}</MacOSBadge>
                     </div>
                   )}
                 </div>
 
+                <MacOSDivider />
+
+                {/* 체스 보드 */}
                 <div
-                  className="grid grid-cols-8 gap-0 rounded-lg overflow-hidden"
+                  className="grid grid-cols-8 gap-0 rounded-xl overflow-hidden macos-scale-in"
                   style={{
                     width: "400px",
                     height: "400px",
                     aspectRatio: "1 / 1",
                     flexShrink: 0,
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
                   }}
                 >
                   {board.map((row, rowIndex) =>
@@ -387,150 +335,151 @@ export const Component = () => {
                   )}
                 </div>
               </div>
-            </GlassCard>
+            </MacOSGlassCard>
           </div>
 
-          <div className="flex flex-col gap-3 flex-1 min-w-0 min-h-0">
-            <GlassCard hover={true} style={{ padding: "16px", height: "300px", flexShrink: 0 }}>
+          <div className="flex flex-col gap-4 flex-1 min-w-0 min-h-0">
+            {/* AI 채팅 */}
+            <MacOSGlassCard hover={true} style={{ padding: "20px", height: "300px", flexShrink: 0 }}>
               <div className="flex flex-col h-full">
-                <div className="text-sm mb-2 font-semibold" style={{ color: "rgba(255, 255, 255, 0.95)" }}>💬 AI 채팅</div>
-                <div className="flex-1 overflow-y-auto space-y-2 pr-2 mb-2" style={{ minHeight: 0, maxHeight: "200px" }}>
-                  {chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className="text-xs p-2.5 rounded-lg transition-all duration-300 hover:scale-102"
-                      style={{
-                        backgroundColor: msg.role === "user" ? "rgba(99, 179, 237, 0.3)" : "rgba(255, 255, 255, 0.12)",
-                        color: "rgba(255, 255, 255, 0.95)",
-                        fontWeight: 400,
-                      }}
-                    >
-                      <div className="flex flex-col gap-1">
-                        <span className="opacity-60 text-xs font-medium">
-                          {msg.role === "user" ? "나" : "AI"} · {msg.timestamp.toLocaleTimeString()}
-                        </span>
-                        <span className="font-normal">{msg.message}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {isAiThinking && (
-                    <div className="text-xs p-2.5 rounded-lg flex items-center gap-2" style={{ backgroundColor: "rgba(255, 255, 255, 0.12)", color: "rgba(255, 255, 255, 0.7)", fontWeight: 400 }}>
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "150ms" }} />
-                        <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "300ms" }} />
-                      </div>
-                      <span>AI가 생각 중...</span>
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
+                <div className="flex items-center gap-2 mb-3">
+                  <span style={{ fontSize: "18px" }}>💬</span>
+                  <MacOSText className="text-base font-semibold">AI 채팅</MacOSText>
                 </div>
-                <form onSubmit={handleChatSubmit} className="flex gap-2">
-                  <input
-                    ref={chatInputRef}
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="AI에게 질문하기..."
-                    className="flex-1 px-3 py-2 rounded-lg text-xs transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
-                    style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.15)",
-                      color: "rgba(255, 255, 255, 0.95)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      outline: "none",
-                      fontWeight: 400,
-                    }}
-                    disabled={isAiThinking}
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105"
-                    style={{
-                      backgroundColor: "rgba(99, 179, 237, 0.5)",
-                      color: "rgba(255, 255, 255, 0.95)",
-                      border: "none",
-                      cursor: isAiThinking ? "not-allowed" : "pointer",
-                      opacity: isAiThinking || !chatInput.trim() ? 0.5 : 1,
-                      fontWeight: 500,
-                    }}
-                    disabled={isAiThinking || !chatInput.trim()}
-                  >
-                    전송
-                  </button>
-                </form>
-              </div>
-            </GlassCard>
 
-            <GlassCard hover={true} style={{ padding: "16px", height: "200px", flexShrink: 0 }}>
-              <div className="flex flex-col h-full">
-                <div className="text-sm mb-2 font-semibold" style={{ color: "rgba(255, 255, 255, 0.95)" }}>📊 분석 로그</div>
-                <div className="flex-1 overflow-y-auto space-y-2 pr-2" style={{ minHeight: 0, maxHeight: "150px" }}>
-                  {analysisMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className="text-xs p-2 rounded-lg transition-all duration-300 hover:scale-102"
-                      style={{
-                        color: "rgba(255, 255, 255, 0.95)",
-                        fontWeight: 400,
-                        backgroundColor:
-                          msg.type === "move"
-                            ? "rgba(99, 179, 237, 0.3)"
-                            : msg.type === "threat"
-                            ? "rgba(255, 107, 107, 0.3)"
-                            : msg.type === "evaluation"
-                            ? "rgba(81, 207, 102, 0.3)"
-                            : "rgba(255, 255, 255, 0.12)",
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="opacity-60 text-xs font-medium">
-                          {msg.timestamp.toLocaleTimeString()}
-                        </span>
-                        <span className="font-normal">{msg.message}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </GlassCard>
-
-            {moveOptions.length > 0 && (
-              <GlassCard hover={true} style={{ padding: "16px" }}>
-                <div className="flex flex-col gap-2">
-                  <div className="text-sm mb-1 font-semibold" style={{ color: "rgba(255, 255, 255, 0.95)" }}>🎯 추천 이동</div>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {moveOptions.slice(0, 5).map((option, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between text-xs p-2 rounded transition-all duration-300 hover:scale-102 hover:bg-white/10"
+                <MacOSScrollView maxHeight="160px" className="flex-1 mb-3">
+                  <div className="space-y-2 pr-2">
+                    {chatMessages.map((msg) => (
+                      <MacOSGlassCard
+                        key={msg.id}
+                        className="p-3 macos-fade-in"
                         style={{
-                          color: "rgba(255, 255, 255, 0.95)",
-                          fontWeight: 400,
-                          backgroundColor: index === 0 ? "rgba(99, 179, 237, 0.2)" : "rgba(255, 255, 255, 0.08)"
+                          backgroundColor: msg.role === "user"
+                            ? "rgba(var(--macos-blue), 0.3)"
+                            : "rgba(var(--glass-white), 0.08)",
                         }}
                       >
-                        <span className="font-mono font-semibold">{option.move}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="opacity-70">깊이 {option.depth}</span>
-                          <span
-                            className="font-bold"
-                            style={{
-                              color: option.evaluation > 0 ? "#51cf66" : option.evaluation < 0 ? "#ff6b6b" : "rgba(255, 255, 255, 0.95)"
-                            }}
-                          >
-                            {option.evaluation > 0 ? "+" : ""}
-                            {option.evaluation.toFixed(2)}
-                          </span>
+                        <div className="flex flex-col gap-1">
+                          <MacOSText variant="tertiary" className="text-xs">
+                            {msg.role === "user" ? "나" : "AI"} · {msg.timestamp.toLocaleTimeString()}
+                          </MacOSText>
+                          <MacOSText className="text-sm">{msg.message}</MacOSText>
                         </div>
-                      </div>
+                      </MacOSGlassCard>
+                    ))}
+                    {isAiThinking && (
+                      <MacOSGlassCard className="p-3 flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 rounded-full bg-white/50 animate-pulse" />
+                          <div className="w-2 h-2 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "150ms" }} />
+                          <div className="w-2 h-2 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "300ms" }} />
+                        </div>
+                        <MacOSText variant="secondary" className="text-sm">AI가 생각 중...</MacOSText>
+                      </MacOSGlassCard>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+                </MacOSScrollView>
+
+                <form onSubmit={handleChatSubmit} className="flex gap-2">
+                  <MacOSInput
+                    value={chatInput}
+                    onChange={setChatInput}
+                    placeholder="AI에게 질문하기..."
+                    disabled={isAiThinking}
+                    className="flex-1"
+                  />
+                  <MacOSButton
+                    variant="blue"
+                    onClick={handleChatSubmit}
+                    disabled={isAiThinking || !chatInput.trim()}
+                    style={{ padding: "10px 20px" }}
+                  >
+                    전송
+                  </MacOSButton>
+                </form>
+              </div>
+            </MacOSGlassCard>
+
+            {/* 분석 로그 */}
+            <MacOSGlassCard hover={true} style={{ padding: "20px", height: "200px", flexShrink: 0 }}>
+              <div className="flex flex-col h-full">
+                <div className="flex items-center gap-2 mb-3">
+                  <span style={{ fontSize: "18px" }}>📊</span>
+                  <MacOSText className="text-base font-semibold">분석 로그</MacOSText>
+                </div>
+
+                <MacOSScrollView maxHeight="130px">
+                  <div className="space-y-2 pr-2">
+                    {analysisMessages.map((msg) => (
+                      <MacOSGlassCard
+                        key={msg.id}
+                        className="p-2.5 macos-fade-in"
+                        style={{
+                          backgroundColor:
+                            msg.type === "move"
+                              ? "rgba(var(--macos-blue), 0.25)"
+                              : msg.type === "threat"
+                              ? "rgba(var(--macos-red), 0.25)"
+                              : msg.type === "evaluation"
+                              ? "rgba(var(--macos-green), 0.25)"
+                              : "rgba(var(--glass-white), 0.08)",
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <MacOSText variant="tertiary" className="text-xs">
+                            {msg.timestamp.toLocaleTimeString()}
+                          </MacOSText>
+                          <MacOSText className="text-sm">{msg.message}</MacOSText>
+                        </div>
+                      </MacOSGlassCard>
+                    ))}
+                  </div>
+                </MacOSScrollView>
+              </div>
+            </MacOSGlassCard>
+
+            {/* 추천 이동 */}
+            {moveOptions.length > 0 && (
+              <MacOSGlassCard hover={true} style={{ padding: "20px" }}>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: "18px" }}>🎯</span>
+                    <MacOSText className="text-base font-semibold">추천 이동</MacOSText>
+                  </div>
+
+                  <div className="space-y-2">
+                    {moveOptions.slice(0, 5).map((option, index) => (
+                      <MacOSGlassCard
+                        key={index}
+                        hover={true}
+                        className="p-3 macos-fade-in"
+                        style={{
+                          backgroundColor: index === 0 ? "rgba(var(--macos-blue), 0.2)" : "rgba(var(--glass-white), 0.05)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <MacOSBadge variant={index === 0 ? "blue" : "gray"} className="font-mono">
+                            {option.move}
+                          </MacOSBadge>
+                          <div className="flex items-center gap-3">
+                            <MacOSText variant="secondary" className="text-xs">
+                              깊이 {option.depth}
+                            </MacOSText>
+                            <MacOSBadge variant={option.evaluation > 0 ? "green" : option.evaluation < 0 ? "red" : "gray"}>
+                              {option.evaluation > 0 ? "+" : ""}{option.evaluation.toFixed(2)}
+                            </MacOSBadge>
+                          </div>
+                        </div>
+                      </MacOSGlassCard>
                     ))}
                   </div>
                 </div>
-              </GlassCard>
+              </MacOSGlassCard>
             )}
           </div>
         </div>
-      </GlassCard>
+      </MacOSGlassCard>
     </div>
   );
 };
