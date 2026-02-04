@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 
 // Types
-interface GlassEffectProps {
+interface GlassCardProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  hover?: boolean;
 }
 
 interface SquareProps {
@@ -37,23 +38,29 @@ interface MoveOption {
   depth: number;
 }
 
-// Optimized Glass Effect Component with single blur layer
-const GlassEffect: React.FC<GlassEffectProps> = ({
+// Glass Card Component (inspired by glass-calendar)
+const GlassCard: React.FC<GlassCardProps> = ({
   children,
   className = "",
   style = {},
+  hover = false,
 }) => {
   return (
     <div
-      className={`relative flex font-semibold overflow-hidden transition-all duration-300 ${className}`}
+      className={`relative overflow-hidden transition-all duration-500 ${
+        hover ? "hover:scale-105" : ""
+      } ${className}`}
       style={{
-        background: "rgba(0, 0, 0, 0.4)",
-        backdropFilter: "blur(40px) saturate(180%)",
-        WebkitBackdropFilter: "blur(40px) saturate(180%)",
+        background:
+          "linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%)",
+        backdropFilter: "blur(32px) saturate(180%)",
+        WebkitBackdropFilter: "blur(32px) saturate(180%)",
         boxShadow:
           "0 8px 32px 0 rgba(0, 0, 0, 0.37), " +
-          "inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+          "0 1px 2px 0 rgba(0, 0, 0, 0.2), " +
+          "inset 0 0 0 1px rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.18)",
+        borderRadius: "16px",
         willChange: "transform",
         transform: "translateZ(0)",
         ...style,
@@ -69,19 +76,16 @@ const DragHandle: React.FC = () => {
   return (
     <div
       data-tauri-drag-region
-      className="w-full flex items-center justify-center py-2 cursor-move"
+      className="w-full flex items-center justify-center py-3 cursor-move transition-all duration-300 hover:bg-white/5"
       style={{
-        background: "rgba(255, 255, 255, 0.03)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+        background: "linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
       }}
     >
-      <div
-        className="flex gap-1.5"
-        style={{ pointerEvents: "none" }}
-      >
-        <div className="w-1 h-1 rounded-full bg-white/30" />
-        <div className="w-1 h-1 rounded-full bg-white/30" />
-        <div className="w-1 h-1 rounded-full bg-white/30" />
+      <div className="flex gap-1.5" style={{ pointerEvents: "none" }}>
+        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
+        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
+        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all duration-300" />
       </div>
     </div>
   );
@@ -98,11 +102,11 @@ const Square: React.FC<SquareProps> = ({
   onClick,
 }) => {
   const isLight = (row + col) % 2 === 0;
-  const bgColor = isLight ? "rgba(240, 217, 181, 0.85)" : "rgba(181, 136, 99, 0.85)";
+  const bgColor = isLight ? "rgba(240, 217, 181, 0.9)" : "rgba(181, 136, 99, 0.9)";
 
   return (
     <div
-      className="relative w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200"
+      className="relative w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:brightness-110"
       style={{
         backgroundColor: isHighlighted
           ? "rgba(255, 255, 0, 0.5)"
@@ -117,7 +121,7 @@ const Square: React.FC<SquareProps> = ({
     >
       {piece && (
         <span
-          className="font-bold select-none"
+          className="font-bold select-none transition-transform duration-200 hover:scale-110"
           style={{
             textShadow: "0 2px 4px rgba(0,0,0,0.6)",
             fontSize: "2.5rem",
@@ -132,10 +136,10 @@ const Square: React.FC<SquareProps> = ({
       )}
       {isPossibleMove && !piece && (
         <div
-          className="absolute w-3 h-3 rounded-full transition-all duration-200"
+          className="absolute w-3 h-3 rounded-full transition-all duration-200 animate-pulse"
           style={{
             backgroundColor: "rgba(0, 255, 0, 0.7)",
-            boxShadow: "0 0 8px rgba(0, 255, 0, 0.5)",
+            boxShadow: "0 0 12px rgba(0, 255, 0, 0.6)",
           }}
         />
       )}
@@ -143,7 +147,7 @@ const Square: React.FC<SquareProps> = ({
   );
 };
 
-// Main Chess Cheating Component
+// Main Chess Component
 export const Component = () => {
   const [selectedSquare, setSelectedSquare] = useState<{ row: number; col: number } | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Set<string>>(new Set());
@@ -206,7 +210,6 @@ export const Component = () => {
     setChatInput("");
     setIsAiThinking(true);
 
-    // AI 응답 시뮬레이션
     setTimeout(() => {
       const aiResponses = [
         "이 위치에서 가장 좋은 이동은 e4입니다. 중앙을 장악하고 기물의 활동성을 높일 수 있습니다.",
@@ -232,7 +235,6 @@ export const Component = () => {
     const squareKey = `${row}-${col}`;
 
     if (selectedSquare && possibleMoves.has(squareKey)) {
-      // 이동 실행
       const [fromRow, fromCol] = [selectedSquare.row, selectedSquare.col];
       const newBoard = board.map((r) => [...r]);
       const piece = newBoard[fromRow][fromCol];
@@ -243,19 +245,16 @@ export const Component = () => {
       setPossibleMoves(new Set());
       setThreatenedSquares(new Set());
 
-      // 이동 표기법 생성
       const moveNotation = `${String.fromCharCode(97 + fromCol)}${8 - fromRow}${String.fromCharCode(97 + col)}${8 - row}`;
-      const newEvaluation = (Math.random() * 2 - 1);
+      const newEvaluation = Math.random() * 2 - 1;
       setEvaluation(newEvaluation);
       setBestMove(moveNotation);
       setMoveCount((prev) => prev + 1);
       setIsWhiteTurn((prev) => !prev);
 
-      // 분석 메시지 추가
       addAnalysisMessage("move", `이동: ${moveNotation}`);
       addAnalysisMessage("evaluation", `평가: ${newEvaluation > 0 ? "+" : ""}${newEvaluation.toFixed(2)}`);
 
-      // 가능한 이동 옵션 생성
       const options: MoveOption[] = [];
       for (let i = 0; i < 5; i++) {
         options.push({
@@ -269,7 +268,6 @@ export const Component = () => {
 
       addAnalysisMessage("info", `최선의 이동: ${options[0].move} (평가: ${options[0].evaluation > 0 ? "+" : ""}${options[0].evaluation.toFixed(2)})`);
 
-      // 위협 분석
       const threats = new Set<string>();
       for (let i = 0; i < 3; i++) {
         threats.add(`${Math.floor(Math.random() * 8)}-${Math.floor(Math.random() * 8)}`);
@@ -279,11 +277,9 @@ export const Component = () => {
         addAnalysisMessage("threat", `${threats.size}개의 위협이 감지되었습니다.`);
       }
     } else {
-      // 새로운 말 선택
       setSelectedSquare({ row, col });
       const moves = new Set<string>();
       if (board[row][col]) {
-        // 가능한 이동 계산
         for (let r = 0; r < 8; r++) {
           for (let c = 0; c < 8; c++) {
             if (r !== row || c !== col) {
@@ -305,7 +301,6 @@ export const Component = () => {
       className="h-full w-full flex items-center justify-center font-light"
       style={{
         background: "transparent",
-        backgroundColor: "transparent",
         position: "fixed",
         top: 0,
         left: 0,
@@ -313,8 +308,9 @@ export const Component = () => {
         bottom: 0,
       }}
     >
-      <GlassEffect
-        className="rounded-2xl flex flex-col"
+      <GlassCard
+        className="flex flex-col"
+        hover={true}
         style={{
           width: "calc(100% - 40px)",
           height: "calc(100% - 40px)",
@@ -323,23 +319,12 @@ export const Component = () => {
           margin: "20px",
         }}
       >
-        {/* Drag Handle */}
         <DragHandle />
 
-        {/* Main Content */}
         <div className="flex gap-6 items-stretch justify-center w-full h-full p-6" style={{ flex: "1 1 auto", minHeight: 0 }}>
-          {/* 좌측: 체스 보드 및 기본 정보 */}
           <div className="flex flex-col gap-3 flex-shrink-0">
-            <div
-              className="rounded-2xl p-4 flex-shrink-0"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.25)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-              }}
-            >
+            <GlassCard hover={true} style={{ padding: "16px" }}>
               <div className="flex flex-col gap-3">
-                {/* 게임 정보 */}
                 <div className="flex items-center justify-between gap-4 text-xs" style={{ color: "rgba(255, 255, 255, 0.95)", fontWeight: 400 }}>
                   <div className="flex items-center gap-2">
                     <span className="opacity-70">턴:</span>
@@ -356,7 +341,6 @@ export const Component = () => {
                   )}
                 </div>
 
-                {/* 평가 및 최선의 이동 */}
                 <div className="flex items-center justify-between gap-4 text-sm" style={{ color: "rgba(255, 255, 255, 0.95)", fontWeight: 400 }}>
                   <div className="flex items-center gap-2">
                     <span className="opacity-70">평가:</span>
@@ -377,7 +361,6 @@ export const Component = () => {
                   )}
                 </div>
 
-                {/* 체스 보드 */}
                 <div
                   className="grid grid-cols-8 gap-0 rounded-lg overflow-hidden"
                   style={{
@@ -395,9 +378,7 @@ export const Component = () => {
                         row={rowIndex}
                         col={colIndex}
                         piece={piece}
-                        isHighlighted={
-                          selectedSquare?.row === rowIndex && selectedSquare?.col === colIndex
-                        }
+                        isHighlighted={selectedSquare?.row === rowIndex && selectedSquare?.col === colIndex}
                         isPossibleMove={possibleMoves.has(`${rowIndex}-${colIndex}`)}
                         isThreatened={threatenedSquares.has(`${rowIndex}-${colIndex}`)}
                         onClick={() => handleSquareClick(rowIndex, colIndex)}
@@ -406,33 +387,20 @@ export const Component = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </GlassCard>
           </div>
 
-          {/* 우측: 분석 패널 */}
           <div className="flex flex-col gap-3 flex-1 min-w-0 min-h-0">
-            {/* AI 채팅 */}
-            <div
-              className="rounded-2xl p-4 flex flex-col"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.25)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                height: "300px",
-                flexShrink: 0
-              }}
-            >
+            <GlassCard hover={true} style={{ padding: "16px", height: "300px", flexShrink: 0 }}>
               <div className="flex flex-col h-full">
                 <div className="text-sm mb-2 font-semibold" style={{ color: "rgba(255, 255, 255, 0.95)" }}>💬 AI 채팅</div>
                 <div className="flex-1 overflow-y-auto space-y-2 pr-2 mb-2" style={{ minHeight: 0, maxHeight: "200px" }}>
                   {chatMessages.map((msg) => (
                     <div
                       key={msg.id}
-                      className="text-xs p-2.5 rounded-lg"
+                      className="text-xs p-2.5 rounded-lg transition-all duration-300 hover:scale-102"
                       style={{
-                        backgroundColor: msg.role === "user"
-                          ? "rgba(99, 179, 237, 0.3)"
-                          : "rgba(255, 255, 255, 0.12)",
+                        backgroundColor: msg.role === "user" ? "rgba(99, 179, 237, 0.3)" : "rgba(255, 255, 255, 0.12)",
                         color: "rgba(255, 255, 255, 0.95)",
                         fontWeight: 400,
                       }}
@@ -448,7 +416,7 @@ export const Component = () => {
                   {isAiThinking && (
                     <div className="text-xs p-2.5 rounded-lg flex items-center gap-2" style={{ backgroundColor: "rgba(255, 255, 255, 0.12)", color: "rgba(255, 255, 255, 0.7)", fontWeight: 400 }}>
                       <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "0ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
                         <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "150ms" }} />
                         <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" style={{ animationDelay: "300ms" }} />
                       </div>
@@ -464,7 +432,7 @@ export const Component = () => {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="AI에게 질문하기..."
-                    className="flex-1 px-3 py-2 rounded-lg text-xs"
+                    className="flex-1 px-3 py-2 rounded-lg text-xs transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
                     style={{
                       backgroundColor: "rgba(255, 255, 255, 0.15)",
                       color: "rgba(255, 255, 255, 0.95)",
@@ -476,7 +444,7 @@ export const Component = () => {
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                    className="px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105"
                     style={{
                       backgroundColor: "rgba(99, 179, 237, 0.5)",
                       color: "rgba(255, 255, 255, 0.95)",
@@ -491,26 +459,16 @@ export const Component = () => {
                   </button>
                 </form>
               </div>
-            </div>
+            </GlassCard>
 
-            {/* 상세 분석 로그 */}
-            <div
-              className="rounded-2xl p-4 flex flex-col"
-              style={{
-                backgroundColor: "rgba(0, 0, 0, 0.25)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                height: "200px",
-                flexShrink: 0
-              }}
-            >
+            <GlassCard hover={true} style={{ padding: "16px", height: "200px", flexShrink: 0 }}>
               <div className="flex flex-col h-full">
                 <div className="text-sm mb-2 font-semibold" style={{ color: "rgba(255, 255, 255, 0.95)" }}>📊 분석 로그</div>
                 <div className="flex-1 overflow-y-auto space-y-2 pr-2" style={{ minHeight: 0, maxHeight: "150px" }}>
                   {analysisMessages.map((msg) => (
                     <div
                       key={msg.id}
-                      className="text-xs p-2 rounded-lg"
+                      className="text-xs p-2 rounded-lg transition-all duration-300 hover:scale-102"
                       style={{
                         color: "rgba(255, 255, 255, 0.95)",
                         fontWeight: 400,
@@ -534,25 +492,17 @@ export const Component = () => {
                   ))}
                 </div>
               </div>
-            </div>
+            </GlassCard>
 
-            {/* 가능한 이동 목록 */}
             {moveOptions.length > 0 && (
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.25)",
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-                }}
-              >
+              <GlassCard hover={true} style={{ padding: "16px" }}>
                 <div className="flex flex-col gap-2">
                   <div className="text-sm mb-1 font-semibold" style={{ color: "rgba(255, 255, 255, 0.95)" }}>🎯 추천 이동</div>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
                     {moveOptions.slice(0, 5).map((option, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between text-xs p-2 rounded transition-all duration-200 hover:bg-white/10"
+                        className="flex items-center justify-between text-xs p-2 rounded transition-all duration-300 hover:scale-102 hover:bg-white/10"
                         style={{
                           color: "rgba(255, 255, 255, 0.95)",
                           fontWeight: 400,
@@ -576,11 +526,11 @@ export const Component = () => {
                     ))}
                   </div>
                 </div>
-              </div>
+              </GlassCard>
             )}
           </div>
         </div>
-      </GlassEffect>
+      </GlassCard>
     </div>
   );
 };
