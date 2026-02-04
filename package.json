@@ -12,7 +12,9 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@tauri-apps/api": "^2.0.0"
+    "@tauri-apps/api": "^2.0.0",
+    "chess.js": "^1.0.0-beta.8",
+    "stockfish.js": "^10.0.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",
