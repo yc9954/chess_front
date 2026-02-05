@@ -7,14 +7,20 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "fen-api": "CHESS_FEN_MODEL_CMD=\".venv/bin/python scripts/recognize-fen.py\" node ./scripts/fen-api-server.mjs"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "@tauri-apps/api": "^2.0.0",
     "chess.js": "^1.0.0-beta.8",
-    "stockfish.js": "^10.0.2"
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.31.0",
+    "lucide-react": "^0.563.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "stockfish.js": "^10.0.2",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",
