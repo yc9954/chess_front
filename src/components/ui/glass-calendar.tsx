@@ -68,6 +68,7 @@ export const GlassCalendar = React.forwardRef<HTMLDivElement, GlassCalendarProps
     const candidateAreaRef = React.useRef<{ area: BoardArea; count: number } | null>(
       null
     );
+    const lastClipboardRef = React.useRef("");
 
     // 로그 자동 스크롤 제거 - 사용자가 직접 스크롤하도록
     // React.useEffect(() => {
@@ -98,6 +99,7 @@ export const GlassCalendar = React.forwardRef<HTMLDivElement, GlassCalendarProps
       });
       return () => unsubscribe();
     }, []);
+
 
 
 
@@ -175,110 +177,26 @@ export const GlassCalendar = React.forwardRef<HTMLDivElement, GlassCalendarProps
         const dataUrl = `data:image/png;base64,${base64}`;
         if (!area) {
           console.log(" area가 null");
-          addLog(" buildOverlayImage: area가 null");
+          addLog(" buildOverlayImage: area가 null - Python이 이미 그린 이미지 사용");
           return dataUrl;
         }
 
-        console.log(" Area:", area);
-        addLog(` 체스판 영역: (${area.topLeft.x},${area.topLeft.y}) → (${area.bottomRight.x},${area.bottomRight.y})`);
-
-        return await new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            console.log(" 이미지 로드 완료:", img.naturalWidth, "x", img.naturalHeight);
-            
-            const canvas = document.createElement("canvas");
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) {
-              console.log(" Canvas context 생성 실패");
-              resolve(dataUrl);
-              return;
-            }
-            
-            // 이미지 그리기
-            ctx.drawImage(img, 0, 0);
-            console.log(" 이미지 그리기 완료");
-            
-            const width = area.bottomRight.x - area.topLeft.x;
-            const height = area.bottomRight.y - area.topLeft.y;
-            
-            console.log(` 체스판 크기: ${width} x ${height}`);
-            addLog(` 체스판: ${width}×${height}px, 칸: ${(width/8).toFixed(1)}px`);
-            
-            // 외곽선 (녹색 - 매우 굵게)
-            console.log(" 녹색 외곽선 그리기...");
-            ctx.strokeStyle = "#00ff00"; // 순수 녹색
-            ctx.lineWidth = 8;
-            ctx.strokeRect(area.topLeft.x, area.topLeft.y, width, height);
-            
-            const squareWidth = width / 8;
-            const squareHeight = height / 8;
-            
-            // 8x8 그리드 그리기 (노란색 - 더 잘 보이게)
-            console.log("🟡 노란색 그리드 그리기...");
-            ctx.strokeStyle = "#ffff00"; // 순수 노란색
-            ctx.lineWidth = 4;
-            
-            // 세로선
-            for (let i = 1; i < 8; i++) {
-              const x = area.topLeft.x + i * squareWidth;
-              ctx.beginPath();
-              ctx.moveTo(x, area.topLeft.y);
-              ctx.lineTo(x, area.bottomRight.y);
-              ctx.stroke();
-              console.log(`  세로선 ${i}: x=${x}`);
-            }
-            
-            // 가로선
-            for (let i = 1; i < 8; i++) {
-              const y = area.topLeft.y + i * squareHeight;
-              ctx.beginPath();
-              ctx.moveTo(area.topLeft.x, y);
-              ctx.lineTo(area.bottomRight.x, y);
-              ctx.stroke();
-              console.log(`  가로선 ${i}: y=${y}`);
-            }
-            
-            // 코너 라벨 (빨간색 - 크게)
-            console.log(" 라벨 그리기...");
-            ctx.font = "bold 30px Arial";
-            
-            const labels = [
-              { text: "a8", x: area.topLeft.x + 10, y: area.topLeft.y + 40 },
-              { text: "h8", x: area.bottomRight.x - 50, y: area.topLeft.y + 40 },
-              { text: "a1", x: area.topLeft.x + 10, y: area.bottomRight.y - 10 },
-              { text: "h1", x: area.bottomRight.x - 50, y: area.bottomRight.y - 10 },
-            ];
-            
-            labels.forEach(label => {
-              // 배경
-              ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
-              ctx.fillRect(label.x - 5, label.y - 30, 50, 40);
-              // 텍스트
-              ctx.fillStyle = "#ff0000"; // 순수 빨간색
-              ctx.fillText(label.text, label.x, label.y);
-              console.log(`  라벨: ${label.text} at (${label.x}, ${label.y})`);
-            });
-            
-            console.log(" 모든 그리기 완료");
-            addLog(" 그리드 오버레이 완료 (녹색 외곽, 노란색 그리드, 빨간색 라벨)");
-            
-            const finalDataUrl = canvas.toDataURL("image/png");
-            console.log(" DataURL 생성 완료, 길이:", finalDataUrl.length);
-            resolve(finalDataUrl);
-          };
-          
-          img.onerror = (err) => {
-            console.log(" 이미지 로딩 실패:", err);
-            addLog(" 이미지 로딩 실패");
-            resolve(dataUrl);
-          };
-          
-          img.src = dataUrl;
-          console.log(" 이미지 로딩 대기 중...");
-        });
+        // Python이 이미 오버레이를 그렸으므로 여기서는 추가 작업 불필요
+        console.log(" Python에서 이미 오버레이 그림 완료");
+        addLog(` 체스판 영역(물리적): (${area.topLeft.x},${area.topLeft.y}) → (${area.bottomRight.x},${area.bottomRight.y})`);
+        
+        const scaleFactor = window.devicePixelRatio || 2;
+        const logicalTopLeft = {
+          x: Math.round(area.topLeft.x / scaleFactor),
+          y: Math.round(area.topLeft.y / scaleFactor),
+        };
+        const logicalBottomRight = {
+          x: Math.round(area.bottomRight.x / scaleFactor),
+          y: Math.round(area.bottomRight.y / scaleFactor),
+        };
+        addLog(` 체스판 영역(논리적): (${logicalTopLeft.x},${logicalTopLeft.y}) → (${logicalBottomRight.x},${logicalBottomRight.y})`);
+        
+        return dataUrl;
       },
       [addLog]
     );
@@ -482,15 +400,31 @@ export const GlassCalendar = React.forwardRef<HTMLDivElement, GlassCalendarProps
     const getSquarePosition = (square: string): Position => {
       if (!boardArea) throw new Error("체스판 영역이 설정되지 않았습니다");
       
+      // Retina 디스플레이 스케일 팩터 적용
+      // Python에서 반환하는 좌표는 물리적 픽셀이지만, 마우스 클릭은 논리적 픽셀을 사용
+      const scaleFactor = window.devicePixelRatio || 2;
+      
       // 미세 조정 적용
       const area = applyCalibration(boardArea);
       if (!area) throw new Error("Calibration 실패");
 
+      // 논리적 픽셀로 변환
+      const logicalArea = {
+        topLeft: {
+          x: area.topLeft.x / scaleFactor,
+          y: area.topLeft.y / scaleFactor,
+        },
+        bottomRight: {
+          x: area.bottomRight.x / scaleFactor,
+          y: area.bottomRight.y / scaleFactor,
+        },
+      };
+
       let file = square.charCodeAt(0) - 97; // a=0, b=1, ..., h=7
       let rank = parseInt(square[1], 10); // 1, 2, 3, ..., 8
 
-      const boardWidth = area.bottomRight.x - area.topLeft.x;
-      const boardHeight = area.bottomRight.y - area.topLeft.y;
+      const boardWidth = logicalArea.bottomRight.x - logicalArea.topLeft.x;
+      const boardHeight = logicalArea.bottomRight.y - logicalArea.topLeft.y;
 
       const squareWidth = boardWidth / 8;
       const squareHeight = boardHeight / 8;
@@ -499,13 +433,15 @@ export const GlassCalendar = React.forwardRef<HTMLDivElement, GlassCalendarProps
       
       if (boardFlipped) {
         // 흑 시점 (뒤집힌 상태): a1=우상단, h8=좌하단
-        x = Math.round(area.bottomRight.x - (file + 0.5) * squareWidth);
-        y = Math.round(area.bottomRight.y - (rank - 0.5) * squareHeight);
+        x = Math.round(logicalArea.bottomRight.x - (file + 0.5) * squareWidth);
+        y = Math.round(logicalArea.bottomRight.y - (rank - 0.5) * squareHeight);
       } else {
         // 백 시점 (정상): a8=좌상단, h1=우하단
-        x = Math.round(area.topLeft.x + (file + 0.5) * squareWidth);
-        y = Math.round(area.topLeft.y + (8 - rank + 0.5) * squareHeight);
+        x = Math.round(logicalArea.topLeft.x + (file + 0.5) * squareWidth);
+        y = Math.round(logicalArea.topLeft.y + (8 - rank + 0.5) * squareHeight);
       }
+      
+      addLog(`🔍 스케일: ${scaleFactor}x | 물리적: (${area.topLeft.x}, ${area.topLeft.y}) | 논리적: (${logicalArea.topLeft.x.toFixed(1)}, ${logicalArea.topLeft.y.toFixed(1)})`);
       
       return { x, y };
     };

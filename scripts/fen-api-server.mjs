@@ -142,12 +142,12 @@ const server = http.createServer(async (req, res) => {
         modelResult?.result?.debugInfo ||
         null;
 
-      console.log("[fen-api] debugImage", {
+      console.log("[fen-api] debugImage", JSON.stringify({
         hasDebugBase64: Boolean(debugImageBase64),
         debugSize: debugImageBase64 ? debugImageBase64.length : 0,
         debugImagePath,
         debugInfo,
-      });
+      }, null, 2));
 
       const boardArea = lastBoardArea;
 

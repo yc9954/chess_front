@@ -8,6 +8,7 @@ use std::fs;
 use std::process::Command;
 use std::thread;
 use std::time::Duration;
+use arboard::Clipboard;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Position {
@@ -171,6 +172,13 @@ fn capture_fullscreen_image() -> Result<String, String> {
     Ok(general_purpose::STANDARD.encode(bytes))
 }
 
+// 클립보드에서 텍스트 읽기
+#[tauri::command]
+fn get_clipboard_text() -> Result<String, String> {
+    let mut clipboard = Clipboard::new().map_err(|e| format!("Failed to access clipboard: {:?}", e))?;
+    clipboard.get_text().map_err(|e| format!("Failed to get clipboard text: {:?}", e))
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -178,7 +186,8 @@ fn main() {
             execute_chess_move,
             get_mouse_position,
             capture_board_image,
-            capture_fullscreen_image
+            capture_fullscreen_image,
+            get_clipboard_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -182,13 +182,29 @@ export const AutoChessComponent = () => {
   const getSquarePosition = (square: string): Position => {
     if (!boardArea) throw new Error("체스판 영역이 설정되지 않았습니다");
 
+    // Retina 디스플레이 스케일 팩터 적용
+    // Python에서 반환하는 좌표는 물리적 픽셀이지만, 마우스 클릭은 논리적 픽셀을 사용
+    const scaleFactor = window.devicePixelRatio || 2;
+    
+    // 논리적 픽셀로 변환
+    const logicalArea = {
+      topLeft: {
+        x: boardArea.topLeft.x / scaleFactor,
+        y: boardArea.topLeft.y / scaleFactor,
+      },
+      bottomRight: {
+        x: boardArea.bottomRight.x / scaleFactor,
+        y: boardArea.bottomRight.y / scaleFactor,
+      },
+    };
+
     // 백 시점 기준: a1=좌하단, h8=우상단
     // 하지만 우리가 설정한 좌표는 a8=좌상단, h1=우하단
     const file = square.charCodeAt(0) - 97; // a=0, b=1, ..., h=7
     const rank = parseInt(square[1]); // 1, 2, 3, ..., 8
 
-    const boardWidth = boardArea.bottomRight.x - boardArea.topLeft.x;
-    const boardHeight = boardArea.bottomRight.y - boardArea.topLeft.y;
+    const boardWidth = logicalArea.bottomRight.x - logicalArea.topLeft.x;
+    const boardHeight = logicalArea.bottomRight.y - logicalArea.topLeft.y;
 
     const squareWidth = boardWidth / 8;
     const squareHeight = boardHeight / 8;
@@ -197,10 +213,10 @@ export const AutoChessComponent = () => {
     // x: a=0, h=7 (왼쪽에서 오른쪽)
     // y: rank 8=0, rank 1=7 (위에서 아래)
     // 각 칸의 정확한 중심점을 계산
-    const x = Math.round(boardArea.topLeft.x + (file + 0.5) * squareWidth);
-    const y = Math.round(boardArea.topLeft.y + (8 - rank + 0.5) * squareHeight);
+    const x = Math.round(logicalArea.topLeft.x + (file + 0.5) * squareWidth);
+    const y = Math.round(logicalArea.topLeft.y + (8 - rank + 0.5) * squareHeight);
 
-    addLog(`📍 ${square}: (${x}, ${y}) | 칸크기: ${Math.round(squareWidth)}x${Math.round(squareHeight)}px`);
+    addLog(`📍 ${square}: (${x}, ${y}) | 스케일: ${scaleFactor}x | 칸크기: ${Math.round(squareWidth)}x${Math.round(squareHeight)}px`);
     return { x, y };
   };
 
