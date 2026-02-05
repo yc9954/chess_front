@@ -97,10 +97,50 @@ export const AutoChessComponent = () => {
     setLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
   };
 
+  const handleAutoDetectBoard = async () => {
+    setIsSettingBoard(true);
+    setStatus("🔍 체스판 자동 감지 중...");
+    addLog("🔍 체스판 자동 감지 시작");
+
+    try {
+      // 전체 화면 스크린샷을 찍어서 Python API가 체스판 영역을 찾도록 함
+      const result = await recognizeFen(null);
+
+      if (result.boardArea && result.boardArea.topLeft && result.boardArea.bottomRight) {
+        const area = result.boardArea;
+        const width = area.bottomRight.x - area.topLeft.x;
+        const height = area.bottomRight.y - area.topLeft.y;
+
+        addLog(`✅ 체스판 자동 감지 성공!`);
+        addLog(`   좌상단 (a8): (${area.topLeft.x}, ${area.topLeft.y})`);
+        addLog(`   우하단 (h1): (${area.bottomRight.x}, ${area.bottomRight.y})`);
+        addLog(`   크기: ${width}x${height} 픽셀`);
+
+        setBoardArea(area);
+        setStatus("✅ 체스판 자동 감지 완료!");
+
+        if (result.fen) {
+          setCurrentFen(result.fen);
+          lastFenRef.current = result.fen;
+          addLog(`📋 현재 FEN: ${result.fen.split(' ')[0]}`);
+        }
+      } else {
+        addLog("⚠️ 체스판을 찾지 못했습니다. 수동 설정을 시도하세요.");
+        setStatus("⚠️ 체스판 감지 실패");
+      }
+
+      setIsSettingBoard(false);
+    } catch (error) {
+      addLog(`❌ 오류: ${error}`);
+      setStatus("오류 발생");
+      setIsSettingBoard(false);
+    }
+  };
+
   const handleSetBoardArea = async () => {
     setIsSettingBoard(true);
     setStatus("체스판 좌상단 (a8) 코너를 클릭하세요...");
-    addLog("체스판 영역 설정 시작");
+    addLog("체스판 영역 수동 설정 시작");
     addLog("💡 체스판의 좌상단 (a8 칸) 중심을 마우스로 클릭하세요");
 
     try {
@@ -130,7 +170,7 @@ export const AutoChessComponent = () => {
 
       setBoardArea({ topLeft, bottomRight });
       setStatus("✓ 체스판 영역 설정 완료!");
-      addLog("✅ 체스판 영역 설정 완료");
+      addLog("✅ 체스판 영역 수동 설정 완료");
       setIsSettingBoard(false);
     } catch (error) {
       addLog(`❌ 오류: ${error}`);
@@ -156,10 +196,11 @@ export const AutoChessComponent = () => {
     // a8이 topLeft이므로:
     // x: a=0, h=7 (왼쪽에서 오른쪽)
     // y: rank 8=0, rank 1=7 (위에서 아래)
+    // 각 칸의 정확한 중심점을 계산
     const x = Math.round(boardArea.topLeft.x + (file + 0.5) * squareWidth);
     const y = Math.round(boardArea.topLeft.y + (8 - rank + 0.5) * squareHeight);
 
-    addLog(`📍 ${square} 좌표: (${x}, ${y}) [파일=${file}, 랭크=${rank}]`);
+    addLog(`📍 ${square}: (${x}, ${y}) | 칸크기: ${Math.round(squareWidth)}x${Math.round(squareHeight)}px`);
     return { x, y };
   };
 
@@ -213,11 +254,26 @@ export const AutoChessComponent = () => {
       // 1. 체스판 스크린샷 찍고 FEN 인식
       setStatus("🔍 체스판 스캔 중...");
       const result = await recognizeFen(boardArea);
-      
+
       if (!result.fen) {
         addLog("⚠️ FEN 인식 실패");
         setStatus("⚠️ FEN 인식 실패");
         return;
+      }
+
+      // API가 더 정확한 boardArea를 반환한 경우 업데이트
+      if (result.boardArea && result.boardArea.topLeft && result.boardArea.bottomRight) {
+        const newArea = result.boardArea;
+        const oldArea = boardArea;
+
+        // 기존 영역과 차이가 있으면 업데이트
+        if (Math.abs(newArea.topLeft.x - oldArea.topLeft.x) > 5 ||
+            Math.abs(newArea.topLeft.y - oldArea.topLeft.y) > 5 ||
+            Math.abs(newArea.bottomRight.x - oldArea.bottomRight.x) > 5 ||
+            Math.abs(newArea.bottomRight.y - oldArea.bottomRight.y) > 5) {
+          addLog(`📐 체스판 영역 자동 보정: (${newArea.topLeft.x}, ${newArea.topLeft.y}) ~ (${newArea.bottomRight.x}, ${newArea.bottomRight.y})`);
+          setBoardArea(newArea);
+        }
       }
 
       const detectedFen = result.fen;
@@ -398,19 +454,33 @@ export const AutoChessComponent = () => {
             </div>
 
             <button
+              onClick={handleAutoDetectBoard}
+              disabled={isSettingBoard}
+              className="w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: "rgba(99, 179, 237, 0.5)",
+                color: "rgba(255, 255, 255, 0.95)",
+                cursor: isSettingBoard ? "not-allowed" : "pointer",
+                opacity: isSettingBoard ? 0.5 : 1,
+              }}
+            >
+              🔍 체스판 자동 감지 (권장)
+            </button>
+
+            <button
               onClick={handleSetBoardArea}
               disabled={isSettingBoard}
               className="w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
               style={{
                 backgroundColor: boardArea
                   ? "rgba(81, 207, 102, 0.5)"
-                  : "rgba(99, 179, 237, 0.5)",
+                  : "rgba(156, 163, 175, 0.5)",
                 color: "rgba(255, 255, 255, 0.95)",
                 cursor: isSettingBoard ? "not-allowed" : "pointer",
                 opacity: isSettingBoard ? 0.5 : 1,
               }}
             >
-              {boardArea ? "✓ 체스판 영역 재설정" : "체스판 영역 설정"}
+              {boardArea ? "✓ 수동 재설정" : "📍 수동 설정"}
             </button>
 
             {boardArea && (
