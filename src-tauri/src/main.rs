@@ -48,43 +48,53 @@ fn click_position(x: i32, y: i32) -> Result<String, String> {
     Ok(format!("Clicked at ({}, {})", x, y))
 }
 
-// 체스 이동 실행 (from -> to 클릭)
+// 체스 이동 실행 (from -> to 드래그 앤 드롭)
 // 주의: 좌표는 macOS 화면 절대 좌표 (0,0 = 좌상단)
 #[tauri::command]
 fn execute_chess_move(move_cmd: MoveCommand) -> Result<String, String> {
     let settings = Settings::default();
     let mut enigo = Enigo::new(&settings).map_err(|e| format!("Failed to create Enigo: {:?}", e))?;
 
-    println!("🎯 [Rust] 이동 명령 받음: ({}, {}) -> ({}, {})", 
+    println!("🎯 [Rust] 이동 명령 받음: ({}, {}) -> ({}, {})",
         move_cmd.from.x, move_cmd.from.y, move_cmd.to.x, move_cmd.to.y);
 
-    // From 위치로 이동 - 충분한 시간을 두고 안정화
+    // 1단계: From 위치로 이동 - 충분한 시간을 두고 안정화
     println!("🖱️  [Rust] From 위치로 이동: ({}, {})", move_cmd.from.x, move_cmd.from.y);
     enigo
         .move_mouse(move_cmd.from.x, move_cmd.from.y, Coordinate::Abs)
         .map_err(|e| format!("Failed to move mouse: {:?}", e))?;
-    thread::sleep(Duration::from_millis(200)); // 마우스 위치 안정화
-    
-    // 드래그 시작
+    thread::sleep(Duration::from_millis(250)); // 마우스 위치 안정화 (200ms -> 250ms)
+
+    // 2단계: 드래그 시작
     println!("⬇️  [Rust] 마우스 버튼 누름 (Press)");
     enigo
         .button(Button::Left, Direction::Press)
         .map_err(|e| format!("Failed to press: {:?}", e))?;
-    thread::sleep(Duration::from_millis(300)); // 드래그 시작 인식 대기
+    thread::sleep(Duration::from_millis(350)); // 드래그 시작 인식 대기 (300ms -> 350ms)
 
-    // To 위치로 천천히 이동
+    // 3단계: 중간 지점을 거쳐 이동 (더 자연스러운 드래그)
+    let mid_x = (move_cmd.from.x + move_cmd.to.x) / 2;
+    let mid_y = (move_cmd.from.y + move_cmd.to.y) / 2;
+
+    println!("🖱️  [Rust] 중간 지점으로 이동: ({}, {})", mid_x, mid_y);
+    enigo
+        .move_mouse(mid_x, mid_y, Coordinate::Abs)
+        .map_err(|e| format!("Failed to move mouse to midpoint: {:?}", e))?;
+    thread::sleep(Duration::from_millis(100)); // 중간 지점 안정화
+
+    // 4단계: To 위치로 최종 이동
     println!("🖱️  [Rust] To 위치로 드래그: ({}, {})", move_cmd.to.x, move_cmd.to.y);
     enigo
         .move_mouse(move_cmd.to.x, move_cmd.to.y, Coordinate::Abs)
         .map_err(|e| format!("Failed to move mouse: {:?}", e))?;
-    thread::sleep(Duration::from_millis(250)); // 도착 지점 안정화
-    
-    // 드래그 종료
+    thread::sleep(Duration::from_millis(300)); // 도착 지점 안정화 (250ms -> 300ms)
+
+    // 5단계: 드래그 종료
     println!("⬆️  [Rust] 마우스 버튼 뗌 (Release)");
     enigo
         .button(Button::Left, Direction::Release)
         .map_err(|e| format!("Failed to release: {:?}", e))?;
-    thread::sleep(Duration::from_millis(150)); // 릴리스 완료 대기
+    thread::sleep(Duration::from_millis(200)); // 릴리스 완료 대기 (150ms -> 200ms)
 
     println!("✅ [Rust] 드래그 앤 드롭 완료");
     Ok(format!(
